@@ -1,11 +1,10 @@
 
 module.exports = {
-  Charactor: {},
+  Obj: require('build/lib/obj'),
+  Creature: require('build/lib/creature'),
   NPC: {},
   Player: {},
   Item: {},
-  Weapon: {},
-  Armor: {},
   Skill: {},
   Room: {},
   World: {},

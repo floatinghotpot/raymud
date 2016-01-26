@@ -8,6 +8,6 @@ test('item', (t) => {
   t.plan(1);
 
   const item = new F_ITEM();
-  item.setName('bottle');
-  t.equal(item.query('name'), 'bottle');
+  item.setName('瓶子', ['bottle']);
+  t.equal(item.query('name'), '瓶子');
 });

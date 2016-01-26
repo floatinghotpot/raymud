@@ -3,7 +3,7 @@
 const test = require('tape');
 const mixin = require('mixin');
 
-const A = () => {
+const A = function() {
   this._va = 0;
 };
 A.prototype = {
@@ -12,7 +12,7 @@ A.prototype = {
   },
 };
 
-const B = () => {
+const B = function() {
   this._vb = 0;
 };
 B.prototype = {
@@ -21,7 +21,7 @@ B.prototype = {
   },
 };
 
-let C = () => {
+let C = function() {
   this._vc = 0;
 };
 C.prototype = {

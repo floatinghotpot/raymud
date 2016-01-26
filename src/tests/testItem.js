@@ -4,7 +4,7 @@ const test = require('tape');
 
 import { F_ITEM } from '../models/std/item.js'
 
-test('item', (t) => {
+test('F_ITEM', (t) => {
   t.plan(1);
 
   const item = new F_ITEM();

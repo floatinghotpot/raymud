@@ -50,7 +50,7 @@ F_DBASE.prototype = {
     if(!this._tmpDbase) return 0;
     return this._tmpDbase[prop];
   },
-  removeTemp: function(prop) {
+  unsetTemp: function(prop) {
     if(!this._tmpDbase) return;
     delete this._tmpDbase[prop];
     return this;

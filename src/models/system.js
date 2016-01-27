@@ -10,6 +10,17 @@ SYSTEM.destory = (ob) => {
   // env.remove(ob);
 };
 
+SYSTEM.message = (type, msg, ob) => {
+  
+};
+
+SYSTEM.messageVision = (msg, ob) => {
+};
+
+SYSTEM.chineseNumber = (n) => {
+  return n;
+};
+
 // USER
 
 let _currentUser = null;
@@ -27,6 +38,9 @@ USER.prototype = {
     _currentUser = this;
   },
   notifyFail: (str) => {
+    console.log(str);
+  },
+  write: (str) => {
     console.log(str);
   },
   error: (str) => {

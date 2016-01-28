@@ -12,7 +12,7 @@ export const ROOM = Class([F_DBASE, F_CLEAN_UP], {
     return 1;
   },
 
-  cleanUp(inheritFlag) {
+  cleanUp: function(inheritFlag) {
     const items = this.queryTemp('objects');
     if(items) {
       for(let i=items.length-1; i>=0; i--) {
@@ -26,9 +26,11 @@ export const ROOM = Class([F_DBASE, F_CLEAN_UP], {
       func.call(this, inheritFlag);
   },
 
-  remove(thisPlayer) {
+  remove: function() {
     let cnt = 0;
     const items = this.queryTemp('objects');
+    if(!items) return;
+
     for(let i=items.length-1; i>=0; i--) {
       const ob = items[i];
       if(ob && ob.instanceOf(CHARACTER)) {
@@ -44,6 +46,16 @@ export const ROOM = Class([F_DBASE, F_CLEAN_UP], {
     if(cnt && USER.current()) {
       USER.current().write(`WARNNING: ${cnt} wandering NPC(s) created by this room are forced destructed.\n`);
     }
+  },
+
+  makeInventory: function(className) {
+    const ob = SYSTEM.cloneObject(className);
+
+    if(ob.violateUnique()) ob = ob.createReplica();
+    if(!ob) return 0;
+
+    ob.move(this);
+    return ob;
   },
 
   reset() {

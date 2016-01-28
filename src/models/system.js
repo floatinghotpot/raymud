@@ -1,50 +1,92 @@
 'use strict';
 
+const Class = require('mixin-pro').createClass;
+
 // SYSTEM
 
-export const SYSTEM = () => {};
+const _classes = {};
+const _objects = {};
 
-SYSTEM.destory = (ob) => {
-  // TODO: delete ob, remove ref, free memory
-  const env = ob.env && ob.env();
-  // env.remove(ob);
-};
+export const SYSTEM = {
+  shutdown: function() {
+    // TODO: 
 
-SYSTEM.message = (type, msg, ob) => {
-  
-};
+    // clean up objects & classes
+    for(var i in _objects) delete _objects[i];
+    for(var i in _classes) delete _classes[i];
+  },
 
-SYSTEM.messageVision = (msg, ob) => {
-};
+  registerClass: function(className, classDef) {
+    _classes[className] = classDef;
+  },
 
-SYSTEM.chineseNumber = (n) => {
-  return n;
+  unregisterClass: function(className) {
+    delete _classes[className];
+  },
+
+  loadObject: function(className) {
+    const obj = _objects[className];
+    if(!obj) {
+      const classDef = _classes[className];
+      if(classDef) {
+        obj = new classDef();
+        _objects[className] = obj;
+      }
+    }
+    return obj;
+  },
+
+  cloneObject: function(className) {
+    const classDef = _classes[className];
+    if(classDef) obj = new classDef();
+    return obj;
+  },
+
+  callOther: function(className) {
+
+  },
+
+  destruct: function(ob) {
+    // TODO: delete ob, remove ref, free memory
+    const env = ob.environment && ob.environment();
+    // env.remove(ob);
+  },
+
+  message: function(type, msg, env) {
+    console.log(type, msg, env);
+  },
+
+  messageVision: function(msg, ob) {
+    console.log(msg, ob);
+  },
 };
 
 // USER
 
 let _currentUser = null;
 
-export const USER = () => {
-  _currentUser = this;
-};
-
-USER.current = () => {
-  return _currentUser;
-};
-
-USER.prototype = {
-  setCurent: () => {
+export const USER = Class({
+  constructor: function USER() {
     _currentUser = this;
   },
-  notifyFail: (str) => {
-    console.log(str);
-  },
-  write: (str) => {
-    console.log(str);
-  },
-  error: (str) => {
-    console.log(str);
-  },
-};
 
+  setCurrent: function() {
+    _currentUser = this;
+  },
+
+  current: function() {
+    return _currentUser;
+  },
+
+  notifyFail: function(str) {
+    console.log(str);
+  },
+
+  write: function(str) {
+    console.log(str);
+  },
+
+  error: function(str) {
+    console.log(str);
+  },
+});

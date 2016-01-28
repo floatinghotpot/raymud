@@ -15,7 +15,8 @@ export const ITEM = Class([F_DBASE, F_MOVE, F_CLEAN_UP, F_NAME], {
 export const CONTAINER_ITEM = Class(ITEM, {
   constructor: function CONTAINER_ITEM() {
     if(!this.query('exits')) {
-      this.set('exits', { out: 'environment' });
+      // this.environment is a function, call it in the instance
+      this.set('exits', { out: this.environment });
     }
   },
   acceptObject: function(player, ob) {
@@ -62,7 +63,7 @@ export const COMBINED_ITEM = Class(ITEM, {
   short: function(raw) {
     var short = this.Super('short').call(this, raw);
     if(raw) return short;
-    return Lang.chineseNumber(this.queryAmount()) + (this.query('base_unit') || '') + short;
+    return SYSTEM.chineseNumber(this.queryAmount()) + (this.query('base_unit') || '') + short;
   },
   move: function(dest, silent) {
     if(!this.Super('move').call(this, dest, silent)) return false;

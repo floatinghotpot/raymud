@@ -207,3 +207,26 @@ F_MOVE.prototype = {
   },
 };
 
+export const F_UNIQUE = Class({
+  constructor: function F_UNIQUE() {
+    if(!this.constructor._copy) this.constructor._copy = 0;
+    this.constructor._copy ++;
+  },
+
+  destructor: function() {
+    if(this.constructor._copy && this.constructor._copy > 0)
+      this.constructor._copy --;
+  },
+
+  violateUnique: function() {
+    if(!this.query('cloned')) return 0;
+    return this.constructor._copy > 1;
+  },
+
+  createReplica: function() {
+    const replica = this.query('replica_ob');
+    const obj = replica ? SYSTEM.cloneObject(replica) : 0;
+    SYSTEM.destruct(this);
+    return obj;
+  },
+});

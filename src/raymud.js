@@ -1,10 +1,17 @@
 'use strict';
 
-import { Player } from './models/char.js';
-import { Room } from './models/room.js';
+import { SYSTEM, USER } from './models/system.js';
+import { ROOM } from './models/std/room.js';
+import { ITEM, CONTAINER_ITEM } from './models/std/item.js';
 
-const player = new Player();
+var room = new ROOM();
 
-const room = new Room();
+var user = new USER();
+user.move(room);
 
-player.move(room);
+var bag = new CONTAINER_ITEM();
+bag.move(user);
+
+var item = new ITEM();
+item.move(bag);
+

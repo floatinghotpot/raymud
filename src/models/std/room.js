@@ -1,4 +1,5 @@
 'use strict';
+const Class = require('mixin-pro').createClass;
 
 import { F_DBASE, F_CLEAN_UP } from '../feature/base.js';
 
@@ -36,8 +37,8 @@ export const ROOM = Class([F_DBASE, F_CLEAN_UP], {
       if(ob && ob.instanceOf(CHARACTER)) {
         const env = ob.environment();
         if(env !== this) {
-          SYSTEM.message('vision', `一阵强烈的闪光忽然出现，吞没了${ob.name()}。\n`, env);
           items.splice(i, 1);
+          SYSTEM.message('vision', `一阵强烈的闪光忽然出现，吞没了${ob.name()}。\n`, env);
           SYSTEM.destruct(ob);
           cnt++;
         }
@@ -49,7 +50,7 @@ export const ROOM = Class([F_DBASE, F_CLEAN_UP], {
   },
 
   makeInventory: function(className) {
-    const ob = SYSTEM.cloneObject(className);
+    let ob = SYSTEM.cloneObject(className);
 
     if(ob.violateUnique()) ob = ob.createReplica();
     if(!ob) return 0;

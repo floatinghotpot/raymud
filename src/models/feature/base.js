@@ -1,14 +1,13 @@
 'use strict';
 
+const Class = require('mixin-pro').createClass;
+
 import { SYSTEM, USER } from '../system.js';
 
 // F_DBASE
 
-export const F_DBASE = function() {
-};
-
-F_DBASE.prototype = {
-  // default ob, is just the constructor name, so not needed
+export const F_DBASE = Class({
+  constructor: function F_DBASE() {},
 
   // normal data
   set: function(prop, data) {
@@ -69,13 +68,13 @@ F_DBASE.prototype = {
   clearTemp: function() {
     this._tmpDbase = {};
   },
-};
+});
 
 // F_CLEAN_UP
 
-export const F_CLEAN_UP = function() {};
+export const F_CLEAN_UP = Class({
+  constructor: function F_CLEAN_UP() {},
 
-F_CLEAN_UP.prototype = {
   clean_up: function() {
     if(this.interactive && this.interactive()) return 1;
     if(this.environment && this.environment()) return 1;
@@ -89,13 +88,13 @@ F_CLEAN_UP.prototype = {
     SYSTEM.destroy(this);
     return 0;
   },
-};
+});
 
 // F_NAME
 
-export const F_NAME = function() {};
+export const F_NAME = Class({
+  constructor: function F_NAME() {},
 
-F_NAME.prototype = {
   visible: function(ob) {
     return 1;
   },
@@ -137,18 +136,18 @@ F_NAME.prototype = {
   rank: function(politeness, raw) {
     return this.name(raw);
   },
-};
+});
 
 // F_MOVE
 
-export const F_MOVE = function() {
-  this._weight = 0;
-  this._encumb = 0;
-  this._maxEncumb = 0;
-  this._maxInventory = -1;
-};
+export const F_MOVE = Class({
+  constructor: function F_MOVE() {
+    this._weight = 0;
+    this._encumb = 0;
+    this._maxEncumb = 0;
+    this._maxInventory = -1;
+  },
 
-F_MOVE.prototype = {
   weight: function() {
     return this._weight + this._encumb;
   },
@@ -195,17 +194,57 @@ F_MOVE.prototype = {
     if(this.query('equipped') && !this.unequip()) {
       return USER.current().notifyFail('你没有办法取下这样东西。\n');
     }
-    
+
     switch(typeof dest) {
       case 'object':
         break;
-      case 'function':
+      case 'string':
+        const ob = SYSTEM.loadObject(dest);
+        if(ob) {
+          dest = ob;
+        } else {
+          USER.current().error('move: error loading ' + dest + '\n');
+          return 1;
+        }
         break;
       default:
-        
+        USER.current().error('move: Invalid destination, Expected: object or string, Got: ' + dest);
+        return 1;
     }
+
+    // Check if the destination is our environment ( or environment of
+    // environment ..., recursively ). If so, encumbrance checking is omited.
+    let env = this;
+    while(env) {
+      env = env.environment();
+      if(env === dest) break;
+    }
+    if(!dest) return 0;
+    if(!dest.receiveObject(this, env)) return 0;
+
+    // Move the object and update encumbrance
+     if(env) env.addEncumb(- this.weight());
+    this.moveObject(dest);
+
+    // The destination might self-destruct in init(), check it before we
+    // do environment maintains.
+    env = this.environment();
+    if(!env) return 0;
+    env.addEncub( this.weight() );
+    return 1;
   },
-};
+
+  remove: function() {
+    this.removeCallOut();
+    if(this.query('equipped')) this.unequip();
+    const env = this.environment();
+    if(env) env.addEncumb( - this.weight() );
+  },
+
+  inventoryBurning: function(ob, heat) {
+    this.allInventory().receiveHeat(ob, heat);
+  },
+});
 
 export const F_UNIQUE = Class({
   constructor: function F_UNIQUE() {
@@ -213,7 +252,7 @@ export const F_UNIQUE = Class({
     this.constructor._copy ++;
   },
 
-  destructor: function() {
+  onDestroy: function() {
     if(this.constructor._copy && this.constructor._copy > 0)
       this.constructor._copy --;
   },

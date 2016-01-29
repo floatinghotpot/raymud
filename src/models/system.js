@@ -1,5 +1,4 @@
 'use strict';
-
 const Class = require('mixin-pro').createClass;
 
 // SYSTEM
@@ -25,7 +24,7 @@ export const SYSTEM = {
   },
 
   loadObject: function(className) {
-    const obj = _objects[className];
+    let obj = _objects[className];
     if(!obj) {
       const classDef = _classes[className];
       if(classDef) {
@@ -50,6 +49,11 @@ export const SYSTEM = {
     // TODO: delete ob, remove ref, free memory
     const env = ob.environment && ob.environment();
     // env.remove(ob);
+
+    const func = ob.onDestroy;
+    if(typeof func === 'function') func();
+
+    // TODO: destroy it
   },
 
   message: function(type, msg, env) {
@@ -59,6 +63,10 @@ export const SYSTEM = {
   messageVision: function(msg, ob) {
     console.log(msg, ob);
   },
+
+  tellObject: function(player, msg) {
+  },
+
 };
 
 // USER
@@ -76,6 +84,9 @@ export const USER = Class({
 
   current: function() {
     return _currentUser;
+  },
+
+  startBusy: function(func1, func2) {
   },
 
   notifyFail: function(str) {

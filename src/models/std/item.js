@@ -1,5 +1,4 @@
 'use strict';
-
 const Class = require('mixin-pro').createClass;
 
 import { F_DBASE, F_MOVE, F_CLEAN_UP, F_NAME } from '../feature/base.js';

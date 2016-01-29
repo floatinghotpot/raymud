@@ -141,7 +141,7 @@ export const User = Class({
 
     if(this.world) {
       const worldkey = 'world:#' + this.world;
-      this.socket.join(worldkey);
+      this.socket.join(worldkey + '#cast');
       pub.publish(worldkey, JSON.stringify({
         uid: this.uid,
         r: 'relogin',
@@ -250,7 +250,7 @@ export const User = Class({
       reply(0, worldinfo);
 
       user.world = worldId;
-      user.socket.join(worldkey);
+      user.socket.join(worldkey + '#cast');
       pub.publish(worldkey, JSON.stringify({
         f: 'enter',
         uid: user.uid,
@@ -271,7 +271,7 @@ export const User = Class({
       args: 0,
     }));
     this.world = null;
-    this.socket.leave(worldkey);
+    this.socket.leave(worldkey + '#cast');
     return reply(0, {});
   },
 

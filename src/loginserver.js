@@ -243,7 +243,7 @@ export const LoginServer = Class({
       // common callback to send return message for RPC call
       const reply = function(err, ret) {
         return sock.emit('rpc_ret', {
-          seq:req.seq,
+          seq: req.seq,
           err: err,
           ret: ret,
         });
@@ -263,7 +263,12 @@ export const LoginServer = Class({
         if(typeof method === 'function') {
           method.call(user, req, reply);
         } else {
-          return reply(404, 'user RPC not defined: ' + funcName);
+          if(user.world) {
+            var worldkey = 'world:#' + user.world;
+            req.f = 'rpc';
+            server.pub.publish(worldkey, JSON.stringify(req);
+          } else
+            return reply(404, 'user RPC not defined: ' + funcName);
         }
       }
 

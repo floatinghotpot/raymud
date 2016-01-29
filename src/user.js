@@ -274,17 +274,4 @@ export const User = Class({
     this.socket.leave(worldkey + '#cast');
     return reply(0, {});
   },
-
-  onUser_shout: function(req, reply) {
-    if(!this.world) return reply(400, 'not in a world');
-    const pub = this.server.pub;
-    const msg = req.args;
-    if(pub && msg) pub.publish(worldkey, JSON.stringify({
-      f: 'shout',
-      uid: this.uid,
-      seq: 0,
-      args: msg,
-    }));
-    return reply(0, {});
-  },
 });

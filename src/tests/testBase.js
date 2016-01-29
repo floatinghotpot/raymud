@@ -2,7 +2,7 @@
 
 const test = require('tape');
 
-import { F_CLEAN_UP, F_DBASE, F_MOVE, F_NAME } from '../models/feature/base.js';
+import { F_CLEAN_UP, F_DBASE, F_MOVE, F_NAME } from '../logic/feature/base.js';
 
 
 test('mudlib feature F_DBASE', (t) => {

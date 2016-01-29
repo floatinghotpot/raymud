@@ -25,6 +25,7 @@ export const LoginServer = Class({
     this.db = null;
     this.pub = null;
     this.sub = null;
+    this.id = 0;
     this.timer = 0;
     this.isRunning = false;
     this.sockets = {};  // sid -> socket
@@ -37,7 +38,7 @@ export const LoginServer = Class({
   startup: function() {
     if(this.isRunning) throw new Error('server is already running.');
 
-    const redis_conf = conf.redis;
+    const redis_conf = this.conf.redis;
 
     // use redis as data storage
     this.db = redis.createClient(redis_conf.port, redis_conf.host, {});

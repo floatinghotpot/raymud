@@ -35,17 +35,6 @@ export const User = Class({
     return this;
   },
 
-  push: function(event, args) {
-    const sock = this.socket;
-    if(!sock) return;
-
-    sock.emit('push', {
-      uid: this.uid,
-      e: event,
-      args: args,
-    });
-  },
-
   setProfile: function(p) {
     if(p.uid !== this.uid) return;
     if(typeof p !== 'object') return;
@@ -109,7 +98,6 @@ export const User = Class({
     pub.publish('user:#' + this.uid, JSON.stringify({
       f: 'login',
       uid: this.uid,
-      e: 'login',
       args: this.pin,
     }));
   },
@@ -120,22 +108,21 @@ export const User = Class({
     if(!this.world) return;
     const worldkey = 'world:#' + this.world;
     pub.publish(worldkey, JSON.stringify({
-      uid: this.uid,
       f: 'drop',
+      uid: this.uid,
       seq: 0,
       args: 0,
     }));
   },
 
-  onRelogin: function(req) {
+  onReconnect: function(req) {
     const pub = this.server.pub;
     if(!pub) return;
 
-    pub.publish('user:log', 'user (' + this.uid + ') relogin');
+    pub.publish('user:log', 'user (' + this.uid + ') reconnect');
     pub.publish('user:#' + this.uid, JSON.stringify({
-      f: 'login',
+      f: 'reconnect',
       seq: req.seq,
-      e: 'relogin',
       args: this.pin,
     }));
 
@@ -143,8 +130,8 @@ export const User = Class({
       const worldkey = 'world:#' + this.world;
       this.socket.join(worldkey + '#cast');
       pub.publish(worldkey, JSON.stringify({
+        f: 'reconnect',
         uid: this.uid,
-        r: 'relogin',
         seq: 0,
         args: 0,
       }));
@@ -153,42 +140,54 @@ export const User = Class({
 
   onLogout: function() {
     if(!this.world) return;
-    const worldkey = 'world:#' + this.world;
+    const worldkey = 'world:#' + this.world + '#cast';
     this.socket.leave(workdkey);
 
     const pub = this.server.pub;
     if(!pub) return;
     pub.publish(worldkey, JSON.stringify({
+      f: 'exit',
       uid: this.uid,
-      f: 'logout',
       seq: 0,
       args: 0,
     }));
   },
 
-  // message receive from message hub
-  onMessage: function(message) {
+  notify: function(event, args) {
     const sock = this.socket;
-    if(!sock) return;
+    if(sock) sock.emit('event', { uid: this.uid, e: event, args: args });
+    return this;
+  },
 
+  // message receive from message hub
+  onMessage: function(msg) {
     let req = null;
     try {
-      req = JSON.parse(message);
+      req = JSON.parse(msg);
     } catch (e) {
       console.log(e);
       return;
     }
     if(!req || typeof req !== 'object') return;
 
+    const sock = this.socket;
+    if(!sock) return;
     switch(req.f) {
-      case 'rpc_ret':
-      case 'event':
-        sock.emit(req.f, req);
+      case 'reply': // reply to remote call
+      case 'notify': // notify
+        const f = req.f;
+        delete req.f;
+        sock.emit(f, req);
         break;
       case 'login':
+      case 'reconnect':
         if(req.uid === this.uid && req.args !== this.pin) {
-          this.push('bye', 'replaced by another login');
+          this.notify('bye', 'replaced by another login');
         }
+        break;
+      case 'logout':
+        break;
+      case 'drop':
         break;
       case 'reload':
         const pub = this.server.pub;
@@ -204,7 +203,7 @@ export const User = Class({
               args: 0,
             }));
           } else {
-            user.push('reload', {
+            user.notify('reload', {
               uid: user.uid,
               profile: user.getProfile(),
             });

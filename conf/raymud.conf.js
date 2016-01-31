@@ -14,10 +14,19 @@ export const conf = {
     port: 6379,
     passwd: null,
   },
+  world: [
+    'world/common.js',
+    'world/snow.js',
+  ],
   new_user: {
-    coins: 10000,
+  },
+  new_char: {
+    'money/coin': 1000,
     score: 1,
     level: 1,
     exp: 0,
   },
+  entries: [
+    '/snow/inn_hall',
+  ],
 };

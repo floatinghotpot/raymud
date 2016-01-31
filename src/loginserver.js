@@ -187,13 +187,17 @@ export const LoginServer = Class({
 
     for(var i in dropped) {
       if(dropped[i] -- <= 0) {
+        delete dropped[i];
         const user = users[i];
         if(user) {
           self.logoutUser(user);
-          delete dropped[i];
         }
       }
     }
+  },
+
+  removeDropped: function(uid) {
+    delete this.dropped[uid];
   },
 
   onMessage: function(msg) {
@@ -240,10 +244,10 @@ export const LoginServer = Class({
       });
     });
 
-    sock.on('rpc', function(req){
+    sock.on('call', function(req){ // remote call
       // common callback to send return message for RPC call
       const reply = function(err, ret) {
-        return sock.emit('rpc_ret', {
+        return sock.emit('reply', { // reply to remote call
           seq: req.seq,
           err: err,
           ret: ret,
@@ -292,6 +296,7 @@ export const LoginServer = Class({
         pub.publish('user:log', 'user (' + uid + ') drop offline');
         const user = users[uid];
         if(user) {
+          server.dropped[uid] = server.DROP_KICK_TIME;
           user.onDrop();
           user.socket = null;
         }
@@ -388,13 +393,13 @@ export const LoginServer = Class({
 
       if(!sameSock) {
         if(isRelogin) {
-          user.onRelogin(req);
+          user.onReconnect(req);
         } else {
           db.zscore('user:dropped', uid, function(err, ret){
             if(err) return reply(500, 'db error');
             if(ret) {
               db.zrem('user:dropped', uid);
-              user.onRelogin(req);
+              user.onReconnect(req);
             } else {
               user.onLogin(req);
             }

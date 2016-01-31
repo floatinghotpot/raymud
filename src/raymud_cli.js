@@ -19,6 +19,6 @@ if(args.r) {
   if(words[1]) conf.redis.port = parseInt(words[1]);
 }
 
-const server = new LoginServer(conf).startup();
-
 const world = new WorldServer(conf).startup();
+
+const server = new LoginServer(conf).startup();

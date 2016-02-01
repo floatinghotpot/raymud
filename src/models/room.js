@@ -23,13 +23,4 @@ export const ROOM = Class(OBJ, {
     }
     this.Super('setup').apply(this, arguments);
   },
-
-  // when looks from another room, cannot see details
-  looksOutside: function() {
-    return {
-      type: this.constructor.name,
-      short: this.short(),
-      long: this.long(),
-    };
-  },
 });

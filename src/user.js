@@ -192,7 +192,7 @@ export const User = Class({
       case 'reload':
         const pub = this.server.pub;
         const user = this;
-        this.reloadData(function(err, ret){
+        this.loadData(function(err, ret){
           pub.publish('user:log', 'user (' + user.uid + ') data reloaded');
           if(user.world) {
             const worldkey = 'world:#' + user.world;

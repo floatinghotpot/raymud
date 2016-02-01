@@ -18,10 +18,14 @@ export const OBJ = Class({
     this._world.destroyObject(this);
   },
 
+  // overridable
+  // will be called when loadObject() or cloneObject()
+  onCreate: function() {},
+  // will be called when in destruct()
+  onDestroy: function() {},
+
   // ======================
   // F_DBASE
-
-  // raw data
   setRawData: function(data) {
     if(typeof data !== 'object') throw new Error('setData: object required');
     this._data = data;
@@ -119,7 +123,12 @@ export const OBJ = Class({
     return this.query('long', raw) || (this.name() + '看起来没有什么特别。\n');
   },
 
+  // ======================
   // F_ENV
+  absKey: function(key) {
+    if(key[0] === '/') return key;
+    return path.normalize(this._key + '/../' + key);
+  },
   putInto: function(env) {
     const objs = env._objs;
     objs[this._key] = this;
@@ -136,17 +145,95 @@ export const OBJ = Class({
   inventory: function() {
     return this._objs;
   },
-  absKey: function(key) {
-    if(key[0] === '/') return key;
-    return path.normalize(this._key + '/../' + key);
+  looks: function() {
+    return {
+      type: this.constructor.name,
+      short: this.short(),
+      long: this.long(),
+    }
+  },
+  looksInside: function() {
+    const objs = {};
+    for(const key in this._objs) {
+      objs[key] = this._objs[key].short();
+    }
+    return {
+      type: this.constructor.name,
+      short: this.short(),
+      long: this.long(),
+      objects: objs,
+    }
   },
 
-  // overridable, 
-  // will be called when loadObject() or cloneObject()
-  onCreate: function() {},
-  // will be called when in destruct()
-  onDestroy: function() {},
+  // ======================
+  // actions
+  addAction: function(key, action) {
+    if(typeof action === 'string' && action.indexOf('function') === 0) {
+      try {
+        action = eval(action);
+        this._actions[key] = action;
+      } catch(e) {
+      }
+    }
+    if(typeof action === 'function') {
+      this._actions[key] = action;
+    } else {
+      this.world.log('Error: ' + this._key + '->' + 'addAction: ' + action);
+    }
+  },
+  removeAction: function(key) {
+    delete this._actions[key];
+  },
 
+  // ======================
+  // F_MOVE
+  queryMaxEncumb: function() {
+    return this.query('max_encumb') || 0;
+  },
+  queryMaxInventory: function() {
+    return this.query('max_inventory') || 0;
+  },
+  setMaxEncumb: function(v) {
+    this.set('max_encumb', v);
+    return this;
+  },
+  setMaxInventory: function(v) {
+    this.set('max_inventory', v);
+    return this;
+  },
+  queryWeight: function() {
+    return this.query('weight') || 0;
+  },
+  queryEncumb: function() {
+    return this.query('encumb') || 0;
+  },
+  weight: function() {
+    return this.queryWeight() + this.queryEncumb();
+  },
+  setWeight: function(w) {
+    const env = this.environment();
+    if(env) env.addEncumb(w - this.query('weight'));
+    this.set('weight', w);
+  },
+  addEncumb: function(w) {
+    this.set('encumb', (this.query('encumb') || 0) + w);
+    const env = this.environment();
+    env.addEncumb(w);
+  },
+  receiveObject: function(ob, fromInventory, player) {
+    if(!fromInventory && (this.query('encumb')+this.weight() > this.query('max_encumb'))) {
+      return player.
+    }
+
+    const items = this.inventory();
+    let n = 0;
+    for(const i in items) n ++;
+    const maxInv = this.queryMaxInventory();
+    if(maxInv>0 && n>=maxInv) {
+    }
+  },
+  
+  // ======================
   // will be called when initialize after setData()
   setup: function() {
     const world = this._world;
@@ -189,34 +276,4 @@ export const OBJ = Class({
     this._objs = {};
   },
 
-  addAction: function(key, action) {
-    if(typeof action === 'string' && action.indexOf('function') === 0) {
-      try {
-        action = eval(action);
-        this._actions[key] = action;
-      } catch(e) {
-      }
-    }
-    if(typeof action === 'function') {
-      this._actions[key] = action;
-    } else {
-      this.world.log('Error: ' + this._key + '->' + 'addAction: ' + action);
-    }
-  },
-  removeAction: function(key) {
-    delete this._actions[key];
-  },
-
-  looks: function() {
-    const objs = {};
-    for(const key in this._objs) {
-      objs[key] = this._objs[key].short();
-    }
-    return {
-      type: this.constructor.name,
-      short: this.short(),
-      long: this.long(),
-      objects: objs,
-    }
-  },
 });

@@ -155,7 +155,7 @@ export const User = Class({
 
   notify: function(event, args) {
     const sock = this.socket;
-    if(sock) sock.emit('event', { uid: this.uid, e: event, args: args });
+    if(sock) sock.emit('notify', { uid: this.uid, e: event, args: args });
     return this;
   },
 

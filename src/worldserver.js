@@ -1,8 +1,6 @@
 'use strict';
 
-var path = require('path'),
-    redis = require('redis');
-
+var redis = require('redis');
 var Class = require('mixin-pro').createClass;
 
 import { ROOM } from './models/room.js';
@@ -24,13 +22,13 @@ export const WorldServer = Class({
     this.protos = {};
     this.objects = {};
     this.rooms = {};
-    this.chars = {};
+    this.players = {};
 
     this.counts = {
       protos: 0,
       objects: 0,
       rooms: 0,
-      chars: 0,
+      players: 0,
     };
   },
 
@@ -95,11 +93,11 @@ export const WorldServer = Class({
         case 'world':
           self.onMessage(message);
           break;
-        case 'char':
+        case 'player':
           const uid = words[1];
           if(uid) {
-            const char = self.chars[uid];
-            if(char) char.onMessage(message);
+            const player = self.players[uid];
+            if(player) player.onMessage(message);
           }
           break;
       }
@@ -208,16 +206,16 @@ export const WorldServer = Class({
   },
 
   unloadAll: function() {
-    // unload chars
-    const chars = this.chars;
-    for(const i in chars) {
-      const char = chars[i];
-      char.save();
-      char.destruct();
-      delete chars[i];
+    // unload players
+    const players = this.players;
+    for(const i in players) {
+      const player = players[i];
+      player.save();
+      player.destruct();
+      delete players[i];
     }
-    this.chars = {};
-    this.counts.chars = 0;
+    this.players = {};
+    this.counts.players = 0;
 
     // unload rooms
     const rooms = this.rooms;
@@ -275,13 +273,13 @@ export const WorldServer = Class({
 
   tick: function() {
     const self = this;
-    const chars = this.chars;
+    const players = this.players;
     const dropped = this.dropped;
 
     if(this.db && this.id) {
       const key = 'world:#' + this.id;
       this.db.multi()
-        .hset(key, 'chars', self.charsCount).expire(key, 5)
+        .hset(key, 'players', self.playersCount).expire(key, 5)
         .zremrangebyscore('world:all', 0, Date.now()-5000)
         .zadd('world:all', now, this.id)
         .exec();
@@ -299,48 +297,93 @@ export const WorldServer = Class({
     }
     if(!req || typeof req !== 'object') return;
 
+    const pub = this.pub;
+    const userkey = 'user:#' + req.uid;
+    const reply = function(err, ret) {
+      pub.publish(userkey, JSON.stringify({
+        f: 'reply',
+        seq: req.seq,
+        err: err,
+        ret: ret,
+      }));
+    };
+
     switch(req.f) {
       case 'enter':
       case 'exit':
       case 'drop':
       case 'reconnect':
       case 'reload':
-      case 'call':
-        const pub = this.pub;
-        const userkey = 'user:#' + req.uid;
-        const reply = function(err, ret) {
-          pub.publish(userkey, JSON.stringify({
-            f: 'reply',
-            seq: req.seq,
-            err: err,
-            ret: ret,
-          }));
-        };
-        const funcName = 'onChar_' + req.f;
-        const func = this[funcName];
+        const func = this['onChar_' + req.f];
         if(typeof func === 'function') func(req, reply);
         break;
+      case 'cmd':
+        const player = this.players[req.uid];
+        if(player) {
+          player.onChar_cmd(req, reply);
+        } else {
+          reply(404, 'player not found in world: ' + req.uid);
+        }
+        break;
       default:
-        console.log('unknown message: ' + req.f);
+        reply(400, 'unknown message: ' + req.f);
     }
   },
 
   onChar_enter: function(req, reply) {
+    const uid = req.uid;
+    if(!uid) return;
+    if(this.players[uid]) return;
+    const player = this.cloneObject('/player');
+    if(player) {
+      // link player character with user with same uid
+      player.linkUser(uid);
+
+      player.load(function(err, ret) {
+        if(err) return reply(500, 'fail load player data');
+
+        const conf = this.conf;
+        if(ret === 0) { // new player
+          player.setData(conf.new_char);
+          player.save();
+        }
+
+        const startRoom = player.query('last_room') || conf.entries[ Math.floor(Math.random() * conf.entries.length) ];
+        player.move(startRoom);
+
+        reply(0, {});
+      });
+    }
   },
 
   onChar_exit: function(req, reply) {
+    const player = this.players[req.uid];
+    if(!player) return reply(404, 'player not found: ' + req.uid);
+
+    player.save();
+    player.destruct();
+    delete this.players[req.uid];
+
+    reply(0, {});
   },
 
   onChar_drop: function(req, reply) {
+    const player = this.players[req.uid];
+    if(!player) return reply(404, 'player not found: ' + req.uid);
+
+    player.set('offline', 1);
+    player.vision('$N掉线了。\n', player);
   },
 
   onChar_reconnect: function(req, reply) {
+    const player = this.players[req.uid];
+    if(!player) return reply(404, 'player not found: ' + req.uid);
+
+    player.unset('offline', 1);
+    player.vision('$N重新连线了。\n', player);
   },
 
   onChar_reload: function(req, reply) {
-  },
-
-  onChar_call: function(req, reply) {
   },
 
 });

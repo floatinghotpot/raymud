@@ -206,4 +206,17 @@ export const OBJ = Class({
   removeAction: function(key) {
     delete this._actions[key];
   },
+
+  looks: function() {
+    const objs = {};
+    for(const key in this._objs) {
+      objs[key] = this._objs[key].short();
+    }
+    return {
+      type: this.constructor.name,
+      short: this.short(),
+      long: this.long(),
+      objects: objs,
+    }
+  },
 });

@@ -1,11 +1,14 @@
 'use strict';
 
-(function(){
-
 var redis = require('redis');
+
 var Class = require('mixin-pro').createClass;
+
 var ROOM = require('./models/room.js');
 var CHAR = require('./models/char.js');
+var MAP = require('./models/map.js');
+
+var _instances = {};
 
 var WorldServer = Class({
   constructor: function WorldServer(conf) {
@@ -37,20 +40,20 @@ var WorldServer = Class({
   startup: function() {
     if(this.isRunning) throw new Error('server is already running.');
 
-    var redis_conf = this.conf.redis;
+    var redisConf = this.conf.redis;
 
     // use redis as data storage
-    this.db = redis.createClient(redis_conf.port, redis_conf.host, {});
+    this.db = redis.createClient(redisConf.port, redisConf.host, {});
     this.db.on('error', function(err) {
       throw new Error('db redis eror: ' + err);
     });
 
     // use redis pub/sub feature as message hub
-    this.pub = redis.createClient(redis_conf.port, redis_conf.host, {});
+    this.pub = redis.createClient(redisConf.port, redisConf.host, {});
     this.pub.on('error', function(err) {
       throw new Error('pub redis eror: ' + err);
     });
-    this.sub = redis.createClient(redis_conf.port, redis_conf.host, {});
+    this.sub = redis.createClient(redisConf.port, redisConf.host, {});
     this.sub.on('error', function(err) {
       throw new Error('pub redis eror: ' + err);
     });
@@ -62,11 +65,10 @@ var WorldServer = Class({
     });
   },
 
-  startInstance: function() {
+  startInstance: function(instanceId) {
     this.id = instanceId;
 
     var self = this;
-    var conf = this.conf;
     var db = this.db;
     var now = Date.now();
 
@@ -75,11 +77,11 @@ var WorldServer = Class({
     // init userver instance info & expire in 5 seconds,
     // we have to update it every 5 seconds, as heartbeat info
     var key = 'world:#' + instanceId;
-    db.multi().mset(key, {
+    db.multi().hmset(key, {
       id: instanceId,
       started: now,
-      users: 0,
-    }).expire(key, 5).zadd('world:all', now, instanceId).exec();
+      players: 0,
+    }).expire(key, 5).zadd('world:list', now, instanceId).exec();
 
     // init tick() timer
     self.timer = setInterval(function(){
@@ -88,20 +90,23 @@ var WorldServer = Class({
 
     // init listener for message hub
     var sub = this.sub;
-    sub.on('subscribe', function(channel, count){});
+    sub.on('subscribe', function(channel, count){
+      console.log('subscribed to channel: ' + channel + ', ' + count);
+    });
     sub.on('message', function(channel, message){
+      console.log(channel, message);
       var words = channel.split('#');
       switch(words[0]) {
-        case 'world':
-          self.onMessage(message);
-          break;
-        case 'player':
-          var uid = words[1];
-          if(uid) {
-            var player = self.players[uid];
-            if(player) player.onMessage(message);
-          }
-          break;
+      case 'world:':
+        self.onMessage(message);
+        break;
+      case 'player:':
+        var uid = words[1];
+        if(uid) {
+          var player = self.players[uid];
+          if(player) player.onMessage(message);
+        }
+        break;
       }
     });
     sub.subscribe('world:#' + instanceId);
@@ -122,7 +127,8 @@ var WorldServer = Class({
     var files = this.conf.world;
     if(!Array.isArray(files)) throw new Error('setup: world files not configured');
     for(var i=0; i<files.length; i++) {
-      require(files[i]).setup(this);
+      var mapInfo = require(files[i]);
+      new MAP(mapInfo).setup(this);
     }
   },
 
@@ -136,22 +142,21 @@ var WorldServer = Class({
   loadRoom: function(roomKey, roomProto) {
     var obj = null;
     switch(typeof roomProto) {
-      case 'function':
-        obj = new roomProto(this);
-        if(!obj.instantOf(ROOM)) throw new Error('invalid room proto: ' + roomProto);
-        break;
-      case 'object':
-        obj = new ROOM(this);
-        obj.setData(roomProto);
-        break;
-      case 'string':
-        obj = new ROOM(this);
-        obj.set('name', roomProto);
-        obj.set('short', roomProto);
-        break;
-      default:
-        throw new Error('invalid room proto: ' + roomProto);
-        break;
+    case 'function':
+      obj = new roomProto(this);
+      if(!obj.instantOf(ROOM)) throw new Error('invalid room proto: ' + roomProto);
+      break;
+    case 'object':
+      obj = new ROOM(this);
+      obj.setData(roomProto);
+      break;
+    case 'string':
+      obj = new ROOM(this);
+      obj.set('name', roomProto);
+      obj.set('short', roomProto);
+      break;
+    default:
+      throw new Error('invalid room proto: ' + roomProto);
     }
 
     obj._key = roomKey;
@@ -228,27 +233,26 @@ var WorldServer = Class({
 
     // unload rooms
     var rooms = this.rooms;
-    for(var i in rooms) {
-      var room = rooms[i];
-      room.destruct();
-      delete rooms[i];
+    for(var r in rooms) {
+      rooms[r].destruct();
+      delete rooms[r];
     }
     this.rooms = {};
     this.counts.rooms = 0;
 
     // unload objects
     var objects = this.objects;
-    for(var i in objects) {
-      var obj = objects[i];
-      obj.destruct();
+    for(var j in objects) {
+      objects[j].destruct();
+      delete objects[j];
     }
     this.objects = {};
     this.counts.objects = 0;
 
     // unload protos
     var protos = this.protos;
-    for(var i in protos) {
-      delete protos[i];
+    for(var k in protos) {
+      delete protos[k];
     }
     this.protos = {};
     this.counts.protos = 0;
@@ -262,7 +266,7 @@ var WorldServer = Class({
 
     // clear server entry in db
     var db = this.db;
-    db.multi().del('world:#' + this.id).zrem('world:all', this.id).exec(function(err, ret){
+    db.multi().del('world:#' + this.id).zrem('world:list', this.id).exec(function(){
       db.quit();
     });
 
@@ -285,23 +289,23 @@ var WorldServer = Class({
     var players = this.players;
     var dropped = this.dropped;
 
+    var now = Date.now();
     if(this.db && this.id) {
       var key = 'world:#' + this.id;
       this.db.multi()
-        .hset(key, 'players', self.playersCount).expire(key, 5)
-        .zremrangebyscore('world:all', 0, Date.now()-5000)
-        .zadd('world:all', now, this.id)
+        .hset(key, 'players', self.counts.players).expire(key, 5)
+        .zremrangebyscore('world:list', 0, now-5000)
+        .zadd('world:list', now, this.id)
         .exec();
     }
   },
 
   onMessage: function(msg) {
-    console.log('world onMessage: ' + msg);
+    console.log('world-server onMessage: ' + msg);
     var req = null;
     try {
       req = JSON.parse(msg);
     } catch(e) {
-      console.log(msg);
       return;
     }
     if(!req || typeof req !== 'object') return;
@@ -318,28 +322,30 @@ var WorldServer = Class({
     };
 
     switch(req.f) {
-      case 'enter':
-      case 'exit':
-      case 'drop':
-      case 'reconnect':
-      case 'reload':
-        var func = this['onCharCmd' + req.f];
-        if(typeof func === 'function') func(req, reply);
-        break;
-      case 'cmd':
-        var player = this.players[req.uid];
-        if(player) {
-          player.onCharCmd(req, reply);
-        } else {
-          reply(404, 'player not found in world: ' + req.uid);
-        }
-        break;
-      default:
-        reply(400, 'unknown message: ' + req.f);
+    case 'enter':
+    case 'exit':
+    case 'drop':
+    case 'reconnect':
+    case 'reload':
+      var func = this['onCharCmd' + req.f];
+      if(typeof func === 'function') func.call(this, req, reply);
+      break;
+    case 'cmd':
+      var player = this.players[req.uid];
+      if(player) {
+        player.onCharCmd(req, reply);
+      } else {
+        reply(404, 'player not found in world: ' + req.uid);
+      }
+      break;
+    default:
+      reply(400, 'unknown message: ' + req.f);
     }
   },
 
   onCharCmdenter: function(req, reply) {
+    var world = this;
+    console.log(req, reply);
     var uid = req.uid;
     if(!uid) return;
     if(this.players[uid]) return;
@@ -348,21 +354,23 @@ var WorldServer = Class({
       // link player character with user with same uid
       player.linkUser(uid);
 
-      player.load(function(err, ret) {
+      player.load(uid, function(err, ret) {
         if(err) return reply(500, 'fail load player data');
 
-        var conf = this.conf;
+        var conf = world.conf;
         if(ret === 0) { // new player
           player.setData(conf.new_char);
           player.save();
         }
 
         var startRoom = player.query('last_room') || conf.entries[ Math.floor(Math.random() * conf.entries.length) ];
+        console.log(startRoom);
         player.move(startRoom);
-
         reply(0, {});
       });
     }
+    console.log(player._data);
+    //console.log(player.environment().short());
   },
 
   onCharCmdexit: function(req, reply) {
@@ -392,11 +400,9 @@ var WorldServer = Class({
     player.vision('$N重新连线了。\n', player);
   },
 
-  onCharXreload: function(req, reply) {
+  onCharCmdreload: function(req, reply) {
   },
 
 });
 
 exports = module.exports = WorldServer;
-
-})();

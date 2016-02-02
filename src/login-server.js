@@ -1,13 +1,10 @@
 'use strict';
 
-(function(){
-
-var path = require('path'),
-      socketio = require('socket.io'),
-      express = require('express'),
-      http = require('http'),
-      redis = require('redis'),
-      iosredis = require('socket.io-redis');
+var socketio = require('socket.io'),
+  express = require('express'),
+  http = require('http'),
+  redis = require('redis'),
+  ioredis = require('socket.io-redis');
 
 var Class = require('mixin-pro').createClass;
 var User = require('./models/user.js');
@@ -39,22 +36,22 @@ var LoginServer = Class({
   startup: function() {
     if(this.isRunning) throw new Error('server is already running.');
 
-    var redis_conf = this.conf.redis;
+    var redisConf = this.conf.redis;
 
     // use redis as data storage
-    this.db = redis.createClient(redis_conf.port, redis_conf.host, {});
+    this.db = redis.createClient(redisConf.port, redisConf.host, {});
     this.db.on('error', function(err) {
-      console.log('db redis eror: ' + err);
+      throw new Error('db redis eror: ' + err);
     });
 
     // use redis pub/sub feature as message hub
-    this.pub = redis.createClient(redis_conf.port, redis_conf.host, {});
+    this.pub = redis.createClient(redisConf.port, redisConf.host, {});
     this.pub.on('error', function(err) {
-      console.log('pub redis eror: ' + err);
+      throw new Error('pub redis eror: ' + err);
     });
-    this.sub = redis.createClient(redis_conf.port, redis_conf.host, {});
+    this.sub = redis.createClient(redisConf.port, redisConf.host, {});
     this.sub.on('error', function(err) {
-      console.log('pub redis eror: ' + err);
+      throw new Error('pub redis eror: ' + err);
     });
 
     var self = this;
@@ -109,20 +106,20 @@ var LoginServer = Class({
 
     // init listener for message hub
     var sub = this.sub;
-    sub.on('subscribe', function(channel, count){});
+    // sub.on('subscribe', function(channel, count){});
     sub.on('message', function(channel, message){
       var words = channel.split('#');
       switch(words[0]) {
-        case 'server':
-          self.onMessage(message);
-          break;
-        case 'user':
-          var uid = words[1];
-          if(uid) {
-            var user = self.users[uid];
-            if(user) user.onMessage(message);
-          }
-          break;
+      case 'server':
+        self.onMessage(message);
+        break;
+      case 'user':
+        var uid = words[1];
+        if(uid) {
+          var user = self.users[uid];
+          if(user) user.onMessage(message);
+        }
+        break;
       }
     });
     sub.subscribe('server:#' + instanceId);
@@ -140,7 +137,7 @@ var LoginServer = Class({
 
     // clear server entry in db
     var db = this.db;
-    db.multi().del('server:#' + this.id).zrem('server:all', this.id).exec(function(err, ret){
+    db.multi().del('server:#' + this.id).zrem('server:all', this.id).exec(function(){
       db.quit();
     });
 
@@ -156,9 +153,9 @@ var LoginServer = Class({
 
     // close all connections
     var sockets = this.sockets;
-    for(var i in sockets) {
-      sockets[i].disconnect();
-      delete sockets[i];
+    for(var j in sockets) {
+      sockets[j].disconnect();
+      delete sockets[j];
     }
 
     this.pub.publish('server:log', 'server #' + this.id + ' stopped');
@@ -177,11 +174,12 @@ var LoginServer = Class({
     var users = this.users;
     var dropped = this.dropped;
 
+    var now = Date.now();
     if(this.db && this.id) {
       var key = 'server:#' + this.id;
       this.db.multi()
         .hset(key, 'users', self.usersCount).expire(key, 5)
-        .zremrangebyscore('server:all', 0, Date.now()-5000)
+        .zremrangebyscore('server:all', 0, now-5000)
         .zadd('server:all', now, this.id)
         .exec();
     }
@@ -202,14 +200,14 @@ var LoginServer = Class({
   },
 
   onMessage: function(msg) {
-    console.log('server onMessage: ' + msg);
+    // console.log('server onMessage: ' + msg);
   },
 
   onConnected: function(sock) {
     var server = this;
 
     if(this.logTraffic) {
-      console.log('client connected, socket id: ' + sock.id);
+      // console.log('client connected, socket id: ' + sock.id);
       sock.logTraffic = 1;
     }
 
@@ -220,10 +218,10 @@ var LoginServer = Class({
       sid: sock.id,
       msg: this.conf.server.hellomsg,
       version: this.conf.server.version,
-      client_req: this.conf.server.client_req,
+      'client_req': this.conf.server.client_req,
     });
 
-    sock.on('hello', function(req){
+    sock.on('hello', function(){
       sock.emit('notify', {
         uid: null,
         e: 'prompt',
@@ -239,13 +237,14 @@ var LoginServer = Class({
           },
           login: {
             uid: 'string',
-            passwd: 'string'
+            passwd: 'string',
           },
         },
       });
     });
 
     sock.on('rpc', function(req){ // remote call
+      console.log(req);
       // common callback to send return message for RPC call
       var reply = function(err, ret) {
         return sock.emit('reply', { // reply to remote call
@@ -253,14 +252,14 @@ var LoginServer = Class({
           err: err,
           ret: ret,
         });
-      }
+      };
 
       if(typeof req !== 'object' || typeof req.f !== 'string') return reply(400, 'invalid rpc req');
 
-      var funcName = 'onUser_' + req.f;
+      var funcName = 'onUserRpc' + req.f;
       let method = server[funcName];
-      if(typeof method == 'function') {
-        method.call(server, sock, req);
+      if(typeof method === 'function') {
+        method.call(server, sock, req, reply);
       } else {
         var user = sock.users[ req.uid ];
         if(!user || user.pin !== req.pin) return reply(403, 'invalid uid or pin, login required');
@@ -268,23 +267,22 @@ var LoginServer = Class({
         method = user[funcName];
         if(typeof method === 'function') {
           method.call(user, req, reply);
+        } else if(user.world) {
+          var worldkey = 'world:#' + user.world;
+          req.f = 'rpc';
+          server.pub.publish(worldkey, JSON.stringify(req));
         } else {
-          if(user.world) {
-            var worldkey = 'world:#' + user.world;
-            req.f = 'rpc';
-            server.pub.publish(worldkey, JSON.stringify(req);
-          } else
-            return reply(404, 'user RPC not defined: ' + funcName);
+          return reply(404, 'user rpc method not defined: ' + funcName);
         }
       }
-
-      sock.on('disconnect', function(){
-        server.onDisconnected(sock);
-      });
-
-      server.sockets[sock.id] = sock;
-      server.socketsCount ++;
     });
+
+    sock.on('disconnect', function(){
+      server.onDisconnected(sock);
+    });
+
+    server.sockets[sock.id] = sock;
+    server.socketsCount ++;
   },
 
   onDisconnected: function(sock) {
@@ -294,7 +292,9 @@ var LoginServer = Class({
     var users = sock.users;
     if(users) {
       for(var uid in users) {
-        pub.publish('user:log', 'user (' + uid + ') drop offline');
+        var str = 'user (' + uid + ') drop offline';
+        console.log(str);
+        pub.publish('user:log', str);
         var user = users[uid];
         if(user) {
           server.dropped[uid] = server.DROP_KICK_TIME;
@@ -310,20 +310,20 @@ var LoginServer = Class({
   },
 
   // args: {}
-  onUser_fastsignup: function(sock, req, reply) {
+  onUserRpcfastsignup: function(sock, req, reply) {
     var server = this;
     var args = req.args = {};
     this.db.incr('user:seq', function(err, ret){
       if(err) reply(500, 'db error');
       args.uid = 'u' + ret;
       args.name = args.uid;
-      args.passwd = (100000 + Math.floor(Math.random() * 899999));
+      args.passwd = ''+(100000 + Math.floor(Math.random() * 899999));
       server.signupUser(sock, req, reply);
     });
   },
 
   // args: { uid, passwd, name, phone, email, uuid }
-  onUser_signup: function(sock, req, reply) {
+  onUserRpcsignup: function(sock, req, reply) {
     var args = req.args;
     if(!args || typeof args !== 'object') return reply(400, 'bad request');
     var uid = args.uid;
@@ -332,7 +332,7 @@ var LoginServer = Class({
   },
 
   // args: { uid, passwd }
-  onUser_login: function(sock, req, reply) {
+  onUserRpclogin: function(sock, req, reply) {
     var server = this;
     var db = this.db;
 
@@ -342,6 +342,7 @@ var LoginServer = Class({
     var uid = args.uid;
     var uidkey = 'user:#' + uid;
     db.hgetall(uidkey, function(err, userinfo){
+      // console.log(userinfo);
       // validate login
       if(err) return reply(500, 'db error');
       if(!userinfo) return reply(404, 'user not exists');
@@ -370,7 +371,7 @@ var LoginServer = Class({
         } else {
           user.push('bye', 'replaced by another login');
           user.removeLink();
-          user.setLink(server, sock pin);
+          user.setLink(server, sock, pin);
         }
       } else {
         user.setLink(server, sock, pin);
@@ -381,15 +382,15 @@ var LoginServer = Class({
       reply(0, {
         token : {
           uid : user.uid,
-          pin : user.pin
+          pin : user.pin,
         },
         profile : user.getProfile(),
         cmds : {
           fastsignup: null,
           signup: null,
           login: null,
-          logout: true
-        }
+          logout: true,
+        },
       });
 
       if(!sameSock) {
@@ -410,13 +411,13 @@ var LoginServer = Class({
     });
   },
 
-  onUser_logout: function(sock, req, reply) {
+  onUserRpclogout: function(sock, req, reply) {
     var uid = req.uid;
     var users = sock.users;
     if(!uid || !users) return reply(400, 'invalid request');
 
     var user = users[uid];
-    if(!user || user.pin !=== req.pin) return reply(403, 'access denied');
+    if(!user || user.pin !== req.pin) return reply(403, 'access denied');
 
     reply(0, {
       cmds: {
@@ -429,12 +430,12 @@ var LoginServer = Class({
           name : 'string',
           email : 'email',
           phone : 'string',
-          uuid : 'string'
+          uuid : 'string',
         },
         login : {
           uid : 'string',
-          passwd : 'string'
-        }
+          passwd : 'string',
+        },
       },
     });
 
@@ -483,7 +484,7 @@ var LoginServer = Class({
 
     var uid = req.args.uid;
     var uidkey = 'user:#' + uid;
-    this.db.multi().incr('user:count').hmset(uidkey, userRecord).exec(function(){
+    this.db.multi().incr('user:count').hmset(uidkey, userRecord).exec(function(err){
       if(err) return reply(500, 'db error');
       return reply(0, { uid:uid, passwd: args.passwd });
     });
@@ -493,7 +494,7 @@ var LoginServer = Class({
     if(!user) return;
 
     user.onLogout();
-    user.push('bye', 'logout');
+    user.notify('bye', 'logout');
     user.removeLink();
 
     var uid = user.uid;
@@ -508,5 +509,3 @@ var LoginServer = Class({
 });
 
 exports = module.exports = LoginServer;
-
-})();

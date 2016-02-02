@@ -12,10 +12,10 @@ var conf = {
     port: 6379,
     passwd: null,
   },
-  www: 'www/',
+  www: './www/',
   world: [
-    'world/common.js',
-    'world/snow.js',
+    './world/common.js',
+    './world/snow.js',
   ],
   new_user: {
   },

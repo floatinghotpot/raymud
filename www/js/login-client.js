@@ -41,10 +41,14 @@ Client.prototype = {
     });
   },
 
-  callback: function(seq, args) {
-    var func = this.rpc_callbacks[seq];
-    if(typeof func === 'function') func(args);
-    delete this.rpc_callbacks[seq];
+  callback: function(seq, msg) {
+    console.log(seq, msg);
+    var item = this.rpc_callbacks[seq];
+    if(item) {
+      delete this.rpc_callbacks[seq];
+      var func = item.func;
+      if(typeof func === 'function') func(msg.err, msg.ret);
+    }
   },
 
   bind: function(sock, debugMode) {
@@ -67,7 +71,7 @@ Client.prototype = {
     sock.on('reply', function(msg){
       if(sock.log_traffic) console.log('reply', msg);
       if(!msg || (typeof msg!=='object') || !msg.seq) return;
-      client.callback(msg.seq, msg.args);
+      client.callback(msg.seq, msg);
     });
   },
 
@@ -102,7 +106,7 @@ Client.prototype = {
         if(!this.pin) return reply(400, 'need login first');
     }
 
-    var seq = ++ client.seq;
+    var seq = this.rpc_seq++;
 
     this.rpc_callbacks[seq] = {
       seq: seq,
@@ -117,8 +121,8 @@ Client.prototype = {
       f: method,
       args: args,
     };
-    sock.emit('rpc', req);
-    if(sock.log_traffic) console.log('rpc', req);
+    if(this.sock.log_traffic) console.log('rpc', req);
+    this.sock.emit('rpc', req);
     return this;
   },
 };

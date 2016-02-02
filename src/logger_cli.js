@@ -1,10 +1,9 @@
 #!/usr/bin/env node
 
-var path = require('path'),
-	redis = require('redis'),
-	read = require('read'),
-	fs = require('fs'),
-	conf = require('../conf/raymud.conf.js');
+var redis = require('redis'),
+  read = require('read'),
+  fs = require('fs'),
+  conf = require('../conf/raymud.conf.js');
 
 var argv = require('minimist')(process.argv.slice(2));
 
@@ -13,13 +12,20 @@ console.log('event-logger started, press enter to quit\n');
 if(argv.r) {
   var words = argv.r.split(':');
   if(words[0]) conf.redis.host = words[0];
-  if(words[1]) conf.redis.port = parseInt(words[1]);
+  if(words[1]) conf.redis.port = parseInt(words[1], 10);
 }
 
 var out = process.stdout;
 
 if(argv.o) {
   out = fs.createWriteStream(argv.o, { flags:'a' });
+}
+
+function now() {
+  var d = new Date();
+  return d.getTime() + ', ' +
+    d.getFullYear() + '/' + d.getMonth() + '/' + d.getDate() + ' ' +
+    d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds() + '.' + d.getMilliseconds();
 }
 
 var sub = redis.createClient(conf.redis.port, conf.redis.host, {});
@@ -29,15 +35,8 @@ sub.on('error', function(err){
 });
 
 sub.on('subscribe', function(channel, count){
-  out.write(now() + ', subscribe channel: ' + channel + '\n');
+  out.write(now() + ', subscribe channel: ' + channel + ', ' + count + '\n');
 });
-
-function now() {
-  var d = new Date();
-  return d.getTime() + ', ' + 
-    d.getFullYear() + '/' + d.getMonth() + '/' + d.getDate() + ' ' +
-    d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds() + '.' + d.getMilliseconds();
-}
 
 sub.on('message', function(channel, message){
   var str = now() + ', ' + message;
@@ -47,7 +46,7 @@ sub.on('message', function(channel, message){
 sub.subscribe('server:log');
 sub.subscribe('user:log');
 
-read({ prompt: '' }, function(err, input){
+read({ prompt: '' }, function(){
   if(out !== process.stdout) out.end();
   process.exit(0);
   console.log( 'event-logger stopped.\n' );

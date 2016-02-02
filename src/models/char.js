@@ -191,12 +191,14 @@ var CHAR = Class(OBJ, {
     if(!this._uid) return reply(500, 'no uid is found when save');
 
     // TODO:
+    return reply(0, 1);
   },
 
   load: function(uid, reply) {
     if(!this._uid) return reply(500, 'no uid is found when save');
 
     // TODO:
+    return reply(0, 0);
   },
 
   onCharCmd: function(req, reply) {

@@ -16,9 +16,8 @@ if(args.m) conf.mongodb = args.m;
 if(args.r) {
   var words = args.r.split(':');
   if(words[0]) conf.redis.host = words[0];
-  if(words[1]) conf.redis.port = parseInt(words[1]);
+  if(words[1]) conf.redis.port = parseInt(words[1], 10);
 }
 
-var world = new WorldServer(conf).startup();
-
-var server = new LoginServer(conf).startup();
+new WorldServer(conf).startup();
+new LoginServer(conf).startup();

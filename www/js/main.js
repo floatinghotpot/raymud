@@ -1,11 +1,79 @@
 var client = new LoginClient();
 
-client.on('hello', function(event, args){
+function echo(str) {
+  var log = $('div#page-vision');
+  log.html( log.html() + str);
+}
 
+var saveUserId = 'saveUserId';
+var saveUserPasswd = 'saveUserPasswd';
+
+function enterWorld(id) {
+  client.rpc('enter', id, function(err, ret){
+  });
+}
+
+function login(u, p) {
+  client.rpc('login', {
+    uid: u,
+    passwd: p
+  }, function(err,ret){
+    if(err) {
+      localStorage.removeItem(saveUserId);
+      localStorage.removeItem(saveUserPasswd);
+      echo(ret);
+    } else {
+      // $('#messages').empty();
+      // $('div#cmds').empty();
+      localStorage.setItem(saveUserId, u);
+      localStorage.setItem(saveUserPasswd, p);
+      echo(ret.token.uid + ' (' + ret.profile.name + ') ' + 'login success');
+
+      client.rpc('worlds', 0, function(err, ret) {
+        if(!err) {
+          if(Array.isArray(ret) && ret.length>0) {
+            for(var i=0; i<ret.length; i++) {
+              if(ret[i] && ret[i].id) {
+                enterWorld(ret[i].id);
+              }
+            }
+          } else echo(JSON.stringify(ret));
+        } else echo(err);
+      });
+    }
+  });
+}
+
+client.on('hello', function(event, args){
+  console.log(event, args);
+  var log = $('div#page-vision');
+  log.html( log.html() + JSON.stringify(args));
+
+  setTimeout(function(){
+    var u = localStorage.getItem(saveUserId);
+    var p = localStorage.getItem(saveUserPasswd);
+    console.log(u, p);
+    if(u && p) {
+      login(u, p);
+    } else {
+      //socket.emit('hello', {});
+      client.rpc('fastsignup', 0, function(err, ret){
+        console.log(err, ret);
+        if(err) {
+          echo(err);
+        } else {
+          echo(('account created: ') + ret.uid + '/' + ret.passwd);
+          login(ret.uid, ret.passwd);
+        }
+      });
+    }
+  }, 200);
 });
 
 client.on('notify', function(event, args){
-
+  console.log(event, args);
+  var log = $('div#page-vision');
+  log.html( log.html() + JSON.stringify(args));
 });
 
 var homePage = 'page-scene';
@@ -33,12 +101,16 @@ $(window).resize(function (){
 });
 
 $(document).ready(function(){
-  $('button.navbtn').on('click', function(e){
+  $('button.navbtn').on('click', function(e) {
     showPage($(this).attr('nav'));
+  });
+
+  $('button#chat-send').on('click', function(e) {
+    var str = $('input#chat-input-box').val();
+
   });
 
   showPage(homePage);
 
-  //client.bind(io(), true);
-
+  client.bind(io(), true);
 });

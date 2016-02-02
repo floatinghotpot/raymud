@@ -103,6 +103,9 @@ var User = Class({
       uid: this.uid,
       args: this.pin,
     }));
+
+    var sub = this.server.sub;
+    sub.subscribe('user:#' + this.uid);
   },
 
   onDrop: function() {
@@ -122,7 +125,12 @@ var User = Class({
     var pub = this.server.pub;
     if(!pub) return;
 
-    pub.publish('user:log', 'user (' + this.uid + ') reconnect');
+    this.server.removeDropped(this.uid);
+
+    var str = 'user (' + this.uid + ') reconnect';
+    console.log(str);
+    pub.publish('user:log', str);
+
     pub.publish('user:#' + this.uid, JSON.stringify({
       f: 'reconnect',
       seq: req.seq,
@@ -139,6 +147,9 @@ var User = Class({
         args: 0,
       }));
     }
+
+    var sub = this.server.sub;
+    sub.subscribe('user:#' + this.uid);
   },
 
   onLogout: function() {
@@ -221,7 +232,7 @@ var User = Class({
     }
   },
 
-  onUserCmdworlds: function(req, reply) {
+  onUserRpcworlds: function(req, reply) {
     var db = this.server.db;
     if(!db) return reply(500, 'db error');
 
@@ -229,6 +240,7 @@ var User = Class({
     db.zrange(worldskey, 0, -1, function(err, ret){
       if(err) return reply(500, 'db error');
       if(!ret) return reply(404, 'not found');
+      console.log(ret);
       var m = db.multi();
       for(var i=0, len=ret.length; i<len; i++) m.hgetall('world:#' + ret[i]);
       m.exec(function(err, list){
@@ -237,8 +249,8 @@ var User = Class({
     });
   },
 
-  onUserCmdenter: function(req, reply) {
-    if(this.world) return reply(400, 'already in a world');
+  onUserRpcenter: function(req, reply) {
+    // if(this.world) return reply(400, 'already in a world');
     var db = this.server.db;
     var pub = this.server.pub;
     if(!db || !pub) return reply(500, 'db error');
@@ -251,7 +263,7 @@ var User = Class({
     db.hgetall(worldkey, function(err, worldinfo) {
       if(err) return reply(500, 'db error');
       if(!worldinfo) return reply(404, 'not found');
-      reply(0, worldinfo);
+      reply(0, 'ok');
 
       user.world = worldId;
       user.socket.join(worldkey + '#cast');
@@ -264,7 +276,7 @@ var User = Class({
     });
   },
 
-  onUserCmdexit: function(req, reply) {
+  onUserRpcexit: function(req, reply) {
     if(!this.world) return reply(400, 'not in a world');
     var worldkey = 'world:#' + this.world;
     var pub = this.server.pub;

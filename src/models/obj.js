@@ -1,9 +1,10 @@
 'use strict';
 
-const Class = require('mixin-pro').createClass;
-const path = require('path');
+var path = require('path'),
+  _ = require('underscore'),
+  Class = require('mixin-pro').createClass;
 
-export const OBJ = Class({
+var OBJ = Class({
   constructor: function OBJ(world) {
     this._world = world;
     this._data = {};
@@ -33,7 +34,7 @@ export const OBJ = Class({
   },
   setData: function(data) {
     if(typeof data !== 'object') throw new Error('setData: object required');
-    for(const prop in data) {
+    for(var prop in data) {
       if(prop.indexOf('/')>=0) {
         this.setDeep(prop, data);
       } else {
@@ -41,7 +42,7 @@ export const OBJ = Class({
       }
     }
   },
-  queryData: function(data) {
+  queryData: function() {
     return this._data;
   },
 
@@ -54,11 +55,11 @@ export const OBJ = Class({
     delete this._data[prop];
     return this;
   },
-  query: function(prop, raw) {
+  query: function(prop) {
     return this._data[prop];
   },
   add: function(prop, data) {
-    const old = this.query(prop, 1);
+    var old = this.query(prop, 1);
     if(!old) return this.set(prop, data);
     if(typeof old === 'function') return old;
     return this.set(prop, old + data);
@@ -66,11 +67,11 @@ export const OBJ = Class({
 
   // setDeep('prop1/sub/sub2', data);
   setDeep: function(prop, data) {
-    const words = prop.split('/');
-    let _data = this._data;
-    const n = words.length -1;
-    for(let i=0; i<n; i++) {
-      const d = _data[words[i]];
+    var words = prop.split('/');
+    var _data = this._data;
+    var n = words.length -1;
+    for(var i=0; i<n; i++) {
+      var d = _data[words[i]];
       if(!d) _data[words[i]] = {};
       _data = d;
     }
@@ -78,12 +79,12 @@ export const OBJ = Class({
     return this;
   },
   // queryDeep('prop1/sub/sub2', data);
-  queryDeep: function(prop, raw) {
-    const words = prop.split('/');
-    let _data = this._data;
-    const n = words.length -1;
-    for(let i=0; i<n; i++) {
-      const d = _data[words[i]];
+  queryDeep: function(prop) {
+    var words = prop.split('/');
+    var _data = this._data;
+    var n = words.length -1;
+    for(var i=0; i<n; i++) {
+      var d = _data[words[i]];
       if(!d) return 0;
       _data = d;
     }
@@ -109,15 +110,16 @@ export const OBJ = Class({
     return this.query('idlist');
   },
   id: function(str) {
-    const idlist = this.query('idlist');
+    var idlist = this.query('idlist');
     return Array.isArray(idlist) && (idlist.indexOf(str)>=0);
   },
-  name: function(raw) {
-    const str = this.query('name');
-    return str ? str : this.constructor.name;
+  name: function() {
+    return this.query('name') || this.constructor.name;
   },
-  short: function(raw) {
-    return this.query('short', 1) || this.name(1);
+  short: function() {
+    var str = this.query('short', 1) || this.name(1);
+    str += '(' + this.query('id') + ')';
+    return str;
   },
   long: function(raw) {
     return this.query('long', raw) || (this.name() + '看起来没有什么特别。\n');
@@ -130,12 +132,12 @@ export const OBJ = Class({
     return path.normalize(this._key + '/../' + key);
   },
   putInto: function(env) {
-    const objs = env._objs;
+    var objs = env._objs;
     objs[this._key] = this;
     this._env = env;
   },
   removeFrom: function(env) {
-    const objs = env._objs;
+    var objs = env._objs;
     if(objs[this._key]) delete objs[this._key];
     this._env = null;
   },
@@ -150,19 +152,19 @@ export const OBJ = Class({
       type: this.constructor.name,
       short: this.short(),
       long: this.long(),
-    }
+    };
   },
   looksInside: function() {
-    const objs = {};
-    for(const key in this._objs) {
+    var objs = {};
+    for(var key in this._objs) {
       objs[key] = this._objs[key].short();
     }
     return {
-      type: this.constructor.name,
+      type: this.varructor.name,
       short: this.short(),
       long: this.long(),
       objects: objs,
-    }
+    };
   },
 
   // ======================
@@ -173,6 +175,7 @@ export const OBJ = Class({
         action = eval(action);
         this._actions[key] = action;
       } catch(e) {
+        return;
       }
     }
     if(typeof action === 'function') {
@@ -211,69 +214,109 @@ export const OBJ = Class({
     return this.queryWeight() + this.queryEncumb();
   },
   setWeight: function(w) {
-    const env = this.environment();
+    var env = this.environment();
     if(env) env.addEncumb(w - this.query('weight'));
     this.set('weight', w);
   },
   addEncumb: function(w) {
     this.set('encumb', (this.query('encumb') || 0) + w);
-    const env = this.environment();
+    var env = this.environment();
     env.addEncumb(w);
   },
   receiveObject: function(ob, fromInventory, player) {
     if(!fromInventory && (this.query('encumb')+this.weight() > this.query('max_encumb'))) {
-      return player.
+      return player.notifyFail(ob.name() + '太重了。\n');
     }
 
-    const items = this.inventory();
-    let n = 0;
-    for(const i in items) n ++;
-    const maxInv = this.queryMaxInventory();
+    var items = this.inventory();
+    var n = _.size(items);
+    var maxInv = this.queryMaxInventory();
     if(maxInv>0 && n>=maxInv) {
+      return player.notifyFail(this.name() + '装不下了。\n');
     }
   },
-  
+
+  move: function(dest, silently, player) {
+    if(this.query('equipped') && !(this.unequp())) {
+      return player.notifyFail('你没办法取下这样东西。\n');
+    }
+
+    switch(typeof dest) {
+    case 'object':
+      break;
+    case 'string':
+      dest = this._world.loadObject(this.absKey(dest));
+      break;
+    default:
+      player.notifyFail('move: invalid destination, expected: object or string, got: ' + dest);
+    }
+
+    // Check if the destination is our environment ( or environment of
+    // environment ..., recursively ). If so, encumbrance checking is omited.
+    var env = this;
+    while((env = env.environment())) if(env === dest) break;
+    if(!dest) return 0;
+    if(!dest.receiveObject(this, env, player)) return 0;
+
+    // Move the object and update encumbrance
+    var w = this.weight();
+    env = this.environment();
+    if(env) env.addEncumb(-w);
+
+    this.putInto(dest);
+
+    // The destination might self-destruct in init(), check it before we
+    // do environment maintains.
+    env = this.environment();
+    if(!env) return 0;
+
+    env.addEncumb(w);
+    return 1;
+  },
+
   // ======================
   // will be called when initialize after setData()
   setup: function() {
-    const world = this._world;
+    var world = this._world;
 
     // objects
-    const objects = this.query('objects');
+    var objects = this.query('objects');
     if(objects && typeof objects === 'object') {
       for(var key in objects) {
-        const count = objects[key];
-        for(let i=0; i<count; i++) {
-          const obj = world.cloneObject(key);
+        var count = objects[key];
+        for(var i=0; i<count; i++) {
+          var obj = world.cloneObject(key);
           if(obj) obj.putInto(this);
         }
       }
     }
 
     // actions
-    const actions = this.query('actions');
+    var actions = this.query('actions');
     if(typeof actions === 'object') {
-      for(var key in actions) 
-        this.addAction(key, actions[key]);
+      for(var j in actions)
+        this.addAction(j, actions[j]);
     }
-
   },
+
   cleanup: function() {
     // actions
-    const actions = this._actions;
-    for(const key in actions) {
+    var actions = this._actions;
+    for(var key in actions) {
       delete actions[key];
     }
     this._actions = {};
 
     // objects
-    const objs = this._objs;
-    for(const key in objs) {
-      const obj = objs[key];
+    var objs = this._objs;
+    for(var i in objs) {
+      var obj = objs[i];
+      delete objs[i];
       obj.destruct();
-      delete objs[key];
     }
     this._objs = {};
   },
 
 });
+
+exports = module.exports = OBJ;

@@ -1,49 +1,100 @@
 'use strict';
 
-const Class = require('mixin-pro').createClass;
-import { OBJ } from './obj.js';
+var Class = require('mixin-pro').createClass;
+var OBJ = require('./obj.js');
 
-const bodyDescMale = [
+var bodyDescMale = [
   ['瘦小', '瘦弱', '瘦长'],
   ['矮小', '中等', '高大'],
   ['又矮又胖', '肥胖', '魁梧'],
 ];
 
-const bodyDescMale = [
+var bodyDescFemale = [
   ['娇小', '苗条', '又高又瘦'],
   ['矮小', '中等', '高挑'],
   ['矮胖', '丰腴', '魁梧'],
 ];
 
-export const CHAR = Class(OBJ, {
+// define number of person attributes
+var NUM_ATTRIBUTES = 8;
+
+// min / max value of attributes
+var ATTRVAL_MIN = 1;
+var ATTRVAL_MAX = 50;
+
+var CHAR = Class(OBJ, {
   constructor: function CHAR() {
     // wears/armed part: head, neck, chest, leg, foot, left hand, right hand
     this._wears = {};
+    this._attr = {};
+  },
+
+  initAttr: function(base) {
+    // if attribute configured, use its value for attribute
+    var attr = this._attr = this.query('attribute') || {};
+    this.unset('attribute');
+
+    // fill the value with preset values
+    if(base && typeof base === 'object') {
+      for(var i in base)
+        if(i in attr) attr[i] = base[i];
+    }
+  },
+
+  queryAllAttr: function() {
+    return this._attr;
+  },
+
+  queryAttr: function(what, raw) {
+    var attr = this._attr;
+    if(attr) {
+      var a = attr[what];
+      if(a) {
+        if(raw) return a;
+        var tmp = this.queryDeep('temp/apply');
+        return a + (typeof tmp === 'object') ? tmp[what] : '';
+      }
+    }
+    return 0;
+  },
+
+  setAttr: function(what, value) {
+    var attr = this._attr;
+    if(attr) {
+      if(attr[what] && (value>=ATTRVAL_MIN) && (value<=ATTRVAL_MAX)) {
+        attr[what] = value;
+      }
+    }
+    return 0;
   },
 
   looks: function(player) {
     return {
       type: this.constructor.name,
       short: this.short(),
-      long: this.long() + this.facialLooks(),
+      long: this.long() + this.facialLooks(player),
       wears: this.wearLooks(),
-    }
+    };
   },
-  facialLooks: function(){
+
+  facialLooks: function(player){
     // TODO: text describe according to gender / age / height / weight / face / temperament
     if(this.query('race') !== 'human') return '';
-    const male = this.query('gender') === 'male';
-    let str = (this === player) ? '你' : (male?'他':'她');
 
-    const stdHeight = male ? 170 : 160; // cm
-    const stdWeight = male ? 65 : 50;   // kg
-    const deltaHeight = ((this.query('height') || stdHeight) - stdHeight);
+    var str = '你';
+    var male = (this.query('gender') === 'male');
+    if(this !== player) str = (male?'他':'她');
 
+    var stdHeight = male ? 170 : 160; // cm
+    var stdWeight = male ? 65 : 50;   // kg
+    var deltaHeight = ((this.query('height') || stdHeight) - stdHeight);
+
+    str += male ? bodyDescMale[4] : bodyDescFemale[4];
   },
 
   wearLooks: function(){
-    const wears = {};
-    for(const key in this._wears) {
+    var wears = {};
+    for(var key in this._wears) {
       wears[key] = this._wears[key].short();
     }
   },
@@ -56,7 +107,7 @@ export const CHAR = Class(OBJ, {
   // scene, look (char/item), vision / tell, feedback, chat/emote, combat
   notify: function(event, args) {
     if(!this._uid) return;
-    const pub = this._world.pub;
+    var pub = this._world.pub;
     pub.publish('user:#' + this._uid, JSON.stringify({
       f: 'notify',
       uid: this._uid,
@@ -66,7 +117,7 @@ export const CHAR = Class(OBJ, {
   },
 
   scene: function() {
-    const env = this.environment();
+    var env = this.environment();
     if(env) this.notify('scene', env.looksInside());
   },
 
@@ -82,9 +133,9 @@ export const CHAR = Class(OBJ, {
   },
 
   vision: function(channel, msg, who, whom) {
-    const neighbors = this.environment().inventory();
-    for(const key in neighbors) {
-      const obj = neighbors[key];
+    var neighbors = this.environment().inventory();
+    for(var key in neighbors) {
+      var obj = neighbors[key];
       if(obj && obj.query('is_player')) {
         obj.tell(channel, msg, who, whom);
       }
@@ -92,24 +143,37 @@ export const CHAR = Class(OBJ, {
   },
 
   tell: function(channel, str, who, whom) {
-    if(whom) str = str.replace('$n', (this === whom) ? '你' : (whom ? whom.short() : ''));
-    if(who) str = str.replace('$N', (this === who) ? '你' : (who ? who.short() : ''));
+    var word;
+    if(who) {
+      if(this === who) word = '你';
+      else word = (who ? who.short() : '');
+      str = str.replace('$N', word);
+    }
+    if(whom) {
+      if(this === whom) word = '你';
+      else word = (whom ? whom.short() : '');
+      str = str.replace('$n', word);
+    }
     this.notify(channel, str);
   },
 
-  feedback: function(str) {
+  write: function(str) {
+    this.notify('feedback', str);
+  },
+
+  notifyFail: function(str) {
     this.notify('feedback', str);
   },
 
   chat: function(str) {
-    const neighbors = this.environment().inventory();
-    for(const key in neighbors) {
-      const obj = neighbors[key];
+    var neighbors = this.environment().inventory();
+    for(var key in neighbors) {
+      var obj = neighbors[key];
       if(obj && obj.query('is_player')) {
         obj.notify('chat', {
           key: this._key,
           short: this.short(),
-          msg: msg,
+          msg: str,
         });
       }
     }
@@ -135,8 +199,14 @@ export const CHAR = Class(OBJ, {
     // TODO:
   },
 
-  onChar_cmd: function(req, reply) {
+  onCharCmd: function(req, reply) {
     // TODO:
   },
 
 });
+
+CHAR.NUM_ATTRIBUTES = NUM_ATTRIBUTES;
+CHAR.ATTRVAL_MIN = ATTRVAL_MIN;
+CHAR.ATTRVAL_MAX = ATTRVAL_MAX;
+
+exports = module.exports = CHAR;

@@ -1,7 +1,5 @@
 'use strict';
 
-var Class = require('mixin-pro').createClass;
-
 /*
 // example of map info
 
@@ -20,27 +18,30 @@ var mapInfo = {
 }
 */
 
-export const MAP = Class({
+var Class = require('mixin-pro').createClass;
+
+var MAP = Class({
   constructor: function MAP(mapInfo) {
     this._mapInfo = mapInfo;
   },
   setup: function(world) {
-    const info = this._mapInfo;
-    const rooms = info.rooms;
-    const objects = info.objs;
+    var info = this._mapInfo;
+    var rooms = info.rooms;
+    var objects = info.objs;
 
-    let area = info.area || '/';
+    var area = info.area || '/';
     if(area[area.length-1] !== '/') area = area + '/';
 
-    for(var key in objects) {
-      const proto = objects[key];
-      if(typeof proto !== 'function') throw new Error('proto not a function/class: ' + key);
-      world.loadProto(area + key, proto);
+    for(var i in objects) {
+      var proto = objects[i];
+      if(typeof proto !== 'function') throw new Error('proto not a function/class: ' + i);
+      world.loadProto(area + i, proto);
     }
 
-    for(var key in rooms) {
-      const proto = rooms[key];
-      const room = world.loadRoom(area + key, proto);
+    for(var j in rooms) {
+      world.loadRoom(area + j, rooms[j]);
     }
   },
 });
+
+exports = module.exports = MAP;

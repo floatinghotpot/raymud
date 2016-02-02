@@ -1,26 +1,31 @@
 'use strict';
 
-const Class = require('mixin-pro').createClass;
+var Class = require('mixin-pro').createClass;
+var OBJ = require('./obj.js');
 
-import { OBJ } from './obj.js';
-
-export const ROOM = Class(OBJ, {
+var ROOM = Class(OBJ, {
   constructor: function ROOM() {
   },
+
   setup: function() {
+    var world = this._world;
+
     // objects
-    const objects = this.query('objects');
+    var objects = this.query('objects');
     if(objects && typeof objects === 'object') {
       for(var key in objects) {
-        const count = objects[key];
+        var count = objects[key];
         for(let i=0; i<count; i++) {
-          const obj = world.cloneObject(key);
+          var obj = world.cloneObject(key);
           if(obj) {
             obj.putInto(this);
           }
         }
       }
     }
+
     this.Super('setup').apply(this, arguments);
   },
 });
+
+exports = module.exports = ROOM;

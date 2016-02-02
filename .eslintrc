@@ -38,15 +38,15 @@ rules:
   spaced-comment: [2, always, markers: ['/']]
 
   # ECMAScript 6
-  arrow-parens: 2
-  arrow-spacing: 2
-  no-class-assign: 2
-  no-dupe-class-members: 2
-  no-var: 2
-  object-shorthand: 2
-  prefer-const: 2
-  prefer-spread: 2
-  prefer-template: 2
+  #arrow-parens: 2
+  #arrow-spacing: 2
+  #no-class-assign: 2
+  #no-dupe-class-members: 2
+  #no-var: 2
+  #object-shorthand: 2
+  #prefer-const: 2
+  #prefer-spread: 2
+  #prefer-template: 2
 
 globals:
   # Exported by packages we use

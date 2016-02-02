@@ -1,10 +1,8 @@
-'use strict';
-
-export const conf = {
+var conf = {
   server: {
     host: '0.0.0.0',
     port: 7000,
-    hello_msg: '欢迎阅读互动小说［武林传奇III］',
+    hello_msg: '江湖梦、侠客行。这里是『我的武林』。阅读、互动，触屏操作，全新演绎 MUD 游戏经典。',
     server: 20160129,
     client_req: 20160129,
   },
@@ -14,6 +12,7 @@ export const conf = {
     port: 6379,
     passwd: null,
   },
+  www: 'www/',
   world: [
     'world/common.js',
     'world/snow.js',
@@ -30,3 +29,5 @@ export const conf = {
     '/snow/inn_hall',
   ],
 };
+
+exports = module.exports = conf;

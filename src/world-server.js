@@ -1,11 +1,13 @@
 'use strict';
 
+(function(){
+
 var redis = require('redis');
 var Class = require('mixin-pro').createClass;
+var ROOM = require('./models/room.js');
+var CHAR = require('./models/char.js');
 
-import { ROOM } from './models/room.js';
-
-export const WorldServer = Class({
+var WorldServer = Class({
   constructor: function WorldServer(conf) {
     this.conf = conf;
     this.reset();
@@ -35,25 +37,25 @@ export const WorldServer = Class({
   startup: function() {
     if(this.isRunning) throw new Error('server is already running.');
 
-    const redis_conf = this.conf.redis;
+    var redis_conf = this.conf.redis;
 
     // use redis as data storage
     this.db = redis.createClient(redis_conf.port, redis_conf.host, {});
     this.db.on('error', function(err) {
-      console.log('db redis eror: ' + err);
+      throw new Error('db redis eror: ' + err);
     });
 
     // use redis pub/sub feature as message hub
     this.pub = redis.createClient(redis_conf.port, redis_conf.host, {});
     this.pub.on('error', function(err) {
-      console.log('pub redis eror: ' + err);
+      throw new Error('pub redis eror: ' + err);
     });
     this.sub = redis.createClient(redis_conf.port, redis_conf.host, {});
     this.sub.on('error', function(err) {
-      console.log('pub redis eror: ' + err);
+      throw new Error('pub redis eror: ' + err);
     });
 
-    const self = this;
+    var self = this;
     this.db.incr('world:seq', function(err, instanceId){
       if(err) return;
       self.startInstance(instanceId);
@@ -63,16 +65,16 @@ export const WorldServer = Class({
   startInstance: function() {
     this.id = instanceId;
 
-    const self = this;
-    const conf = this.conf;
-    const db = this.db;
-    const now = Date.now();
+    var self = this;
+    var conf = this.conf;
+    var db = this.db;
+    var now = Date.now();
 
     this.setup();
 
     // init userver instance info & expire in 5 seconds,
     // we have to update it every 5 seconds, as heartbeat info
-    const key = 'world:#' + instanceId;
+    var key = 'world:#' + instanceId;
     db.multi().mset(key, {
       id: instanceId,
       started: now,
@@ -85,7 +87,7 @@ export const WorldServer = Class({
     }, 1000);
 
     // init listener for message hub
-    const sub = this.sub;
+    var sub = this.sub;
     sub.on('subscribe', function(channel, count){});
     sub.on('message', function(channel, message){
       var words = channel.split('#');
@@ -94,9 +96,9 @@ export const WorldServer = Class({
           self.onMessage(message);
           break;
         case 'player':
-          const uid = words[1];
+          var uid = words[1];
           if(uid) {
-            const player = self.players[uid];
+            var player = self.players[uid];
             if(player) player.onMessage(message);
           }
           break;
@@ -110,9 +112,16 @@ export const WorldServer = Class({
   },
 
   setup: function() {
-    const files = this.conf.world;
+    this.loadProto('/player', CHAR);
+
+    this.loadRoom('/void', {
+      short: '无名之地',
+      long: '你身处一片茫茫的迷雾中，什么都看不见。',
+    });
+
+    var files = this.conf.world;
     if(!Array.isArray(files)) throw new Error('setup: world files not configured');
-    for(let i=0; i<files.length; i++) {
+    for(var i=0; i<files.length; i++) {
       require(files[i]).setup(this);
     }
   },
@@ -125,11 +134,11 @@ export const WorldServer = Class({
   },
 
   loadRoom: function(roomKey, roomProto) {
-    let obj = null;
+    var obj = null;
     switch(typeof roomProto) {
       case 'function':
         obj = new roomProto(this);
-        if(!room.instantOf(ROOM)) throw new Error('invalid room proto: ' + roomProto);
+        if(!obj.instantOf(ROOM)) throw new Error('invalid room proto: ' + roomProto);
         break;
       case 'object':
         obj = new ROOM(this);
@@ -154,15 +163,15 @@ export const WorldServer = Class({
   },
 
   loadObject: function(protoKey) {
-    let obj = this.objects[protoKey];
+    var obj = this.objects[protoKey];
     if(!obj) {
-      const proto = this.protos[protoKey];
+      var proto = this.protos[protoKey];
       if(!proto) throw new Error('proto not found: ' + protoKey);
       if(!proto._copyId) proto._copyId = 0;
       if(!proto._copyCnt) proto._copyCnt = 0;
 
       obj = new proto(this);
-      const key = obj._key = protoKey;
+      var key = obj._key = protoKey;
       this.objects[key] = obj;
       this.counts.objects ++;
       obj.onCreate();
@@ -171,15 +180,15 @@ export const WorldServer = Class({
   },
 
   cloneObject: function(protoKey) {
-    const proto = this.protos[protoKey];
+    var proto = this.protos[protoKey];
     if(!proto) throw new Error('proto not found: ' + protoKey);
     if(!proto._copyId) proto._copyId = 0;
     if(!proto._copyCnt) proto._copyCnt = 0;
 
-    const obj = new proto(this);
+    var obj = new proto(this);
     proto._copyId ++;
     proto._copyCnt ++;
-    const key = obj._key = protoKey + '#' + proto._copyId;
+    var key = obj._key = protoKey + '#' + proto._copyId;
     this.objects[key] = obj;
     this.counts.objects ++;
     obj.onCreate();
@@ -190,14 +199,14 @@ export const WorldServer = Class({
   destroyObject: function(obj) {
     obj.onDestroy();
 
-    const key = obj._key;
+    var key = obj._key;
     if(key) {
       delete this.objects[key];
       this.counts.objects --;
 
-      const protoKey = key.split('#')[0];
+      var protoKey = key.split('#')[0];
       if(protoKey) {
-        const proto = this.protos[protoKey];
+        var proto = this.protos[protoKey];
         if(proto) {
           proto._copyCnt --;
         }
@@ -207,9 +216,9 @@ export const WorldServer = Class({
 
   unloadAll: function() {
     // unload players
-    const players = this.players;
-    for(const i in players) {
-      const player = players[i];
+    var players = this.players;
+    for(var i in players) {
+      var player = players[i];
       player.save();
       player.destruct();
       delete players[i];
@@ -218,9 +227,9 @@ export const WorldServer = Class({
     this.counts.players = 0;
 
     // unload rooms
-    const rooms = this.rooms;
-    for(const i in rooms) {
-      const room = rooms[i];
+    var rooms = this.rooms;
+    for(var i in rooms) {
+      var room = rooms[i];
       room.destruct();
       delete rooms[i];
     }
@@ -228,17 +237,17 @@ export const WorldServer = Class({
     this.counts.rooms = 0;
 
     // unload objects
-    const objects = this.objects;
-    for(const i in objects) {
-      const obj = objects[i];
+    var objects = this.objects;
+    for(var i in objects) {
+      var obj = objects[i];
       obj.destruct();
     }
     this.objects = {};
     this.counts.objects = 0;
 
     // unload protos
-    const protos = this.protos;
-    for(const i in protos) {
+    var protos = this.protos;
+    for(var i in protos) {
       delete protos[i];
     }
     this.protos = {};
@@ -252,7 +261,7 @@ export const WorldServer = Class({
     if(this.timer) clearInterval(this.timer);
 
     // clear server entry in db
-    const db = this.db;
+    var db = this.db;
     db.multi().del('world:#' + this.id).zrem('world:all', this.id).exec(function(err, ret){
       db.quit();
     });
@@ -272,12 +281,12 @@ export const WorldServer = Class({
   },
 
   tick: function() {
-    const self = this;
-    const players = this.players;
-    const dropped = this.dropped;
+    var self = this;
+    var players = this.players;
+    var dropped = this.dropped;
 
     if(this.db && this.id) {
-      const key = 'world:#' + this.id;
+      var key = 'world:#' + this.id;
       this.db.multi()
         .hset(key, 'players', self.playersCount).expire(key, 5)
         .zremrangebyscore('world:all', 0, Date.now()-5000)
@@ -288,7 +297,7 @@ export const WorldServer = Class({
 
   onMessage: function(msg) {
     console.log('world onMessage: ' + msg);
-    let req = null;
+    var req = null;
     try {
       req = JSON.parse(msg);
     } catch(e) {
@@ -297,9 +306,9 @@ export const WorldServer = Class({
     }
     if(!req || typeof req !== 'object') return;
 
-    const pub = this.pub;
-    const userkey = 'user:#' + req.uid;
-    const reply = function(err, ret) {
+    var pub = this.pub;
+    var userkey = 'user:#' + req.uid;
+    var reply = function(err, ret) {
       pub.publish(userkey, JSON.stringify({
         f: 'reply',
         seq: req.seq,
@@ -314,13 +323,13 @@ export const WorldServer = Class({
       case 'drop':
       case 'reconnect':
       case 'reload':
-        const func = this['onChar_' + req.f];
+        var func = this['onCharCmd' + req.f];
         if(typeof func === 'function') func(req, reply);
         break;
       case 'cmd':
-        const player = this.players[req.uid];
+        var player = this.players[req.uid];
         if(player) {
-          player.onChar_cmd(req, reply);
+          player.onCharCmd(req, reply);
         } else {
           reply(404, 'player not found in world: ' + req.uid);
         }
@@ -330,11 +339,11 @@ export const WorldServer = Class({
     }
   },
 
-  onChar_enter: function(req, reply) {
-    const uid = req.uid;
+  onCharCmdenter: function(req, reply) {
+    var uid = req.uid;
     if(!uid) return;
     if(this.players[uid]) return;
-    const player = this.cloneObject('/player');
+    var player = this.cloneObject('/player');
     if(player) {
       // link player character with user with same uid
       player.linkUser(uid);
@@ -342,13 +351,13 @@ export const WorldServer = Class({
       player.load(function(err, ret) {
         if(err) return reply(500, 'fail load player data');
 
-        const conf = this.conf;
+        var conf = this.conf;
         if(ret === 0) { // new player
           player.setData(conf.new_char);
           player.save();
         }
 
-        const startRoom = player.query('last_room') || conf.entries[ Math.floor(Math.random() * conf.entries.length) ];
+        var startRoom = player.query('last_room') || conf.entries[ Math.floor(Math.random() * conf.entries.length) ];
         player.move(startRoom);
 
         reply(0, {});
@@ -356,8 +365,8 @@ export const WorldServer = Class({
     }
   },
 
-  onChar_exit: function(req, reply) {
-    const player = this.players[req.uid];
+  onCharCmdexit: function(req, reply) {
+    var player = this.players[req.uid];
     if(!player) return reply(404, 'player not found: ' + req.uid);
 
     player.save();
@@ -367,23 +376,27 @@ export const WorldServer = Class({
     reply(0, {});
   },
 
-  onChar_drop: function(req, reply) {
-    const player = this.players[req.uid];
+  onCharCmddrop: function(req, reply) {
+    var player = this.players[req.uid];
     if(!player) return reply(404, 'player not found: ' + req.uid);
 
     player.set('offline', 1);
     player.vision('$N掉线了。\n', player);
   },
 
-  onChar_reconnect: function(req, reply) {
-    const player = this.players[req.uid];
+  onCharCmdreconnect: function(req, reply) {
+    var player = this.players[req.uid];
     if(!player) return reply(404, 'player not found: ' + req.uid);
 
     player.unset('offline', 1);
     player.vision('$N重新连线了。\n', player);
   },
 
-  onChar_reload: function(req, reply) {
+  onCharXreload: function(req, reply) {
   },
 
 });
+
+exports = module.exports = WorldServer;
+
+})();

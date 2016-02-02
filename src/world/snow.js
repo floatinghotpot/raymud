@@ -1,6 +1,6 @@
 'use strict';
 
-const _inn = {
+var _inn = {
   short: '小客栈',
   long: '这里是一家小客栈，老旧的<a cmd=\'look desk\'>桌椅</a>因为经年的使用而变得乌黑黝亮。<a cmd=\'look west\'>西边</a>隔着一层<a cmd=\'look curtain\'>竹帘</a>，隐隐传来一阵阵锅铲得声音，大概是客栈的厨房，靠北边的墙壁边上有一道通往二楼雅座的<a cmd=\'look stair\'>楼梯</a>，楼梯下就是<a cmd=\'look counter\'柜台</a>。<a cmd=\'look east\'>东边</a>是客栈的出口，门口一串纸糊<a cmd=\'look lantern\'>灯笼</a>随风摇摆，上面写着「饮风客栈」，意思是即使你没有钱，也欢迎来这里聊天听书，喝西北风。西南边有一扇木门，通往客栈后面的马房。',
   objects: {
@@ -25,7 +25,7 @@ const _inn = {
   },
 };
 
-const _square = {
+var _square = {
   short: '广场中央',
   long: '这里是雪亭镇广场的中央，一株巨大的<a cmd="look tree">老榕树</a>盘根错节地站在中央，一些孩童常常<a cmd="climb tree">爬</a>上这棵老榕树嬉戏，榕树下七横八竖地放着几张<a cmd="look bench">长凳</a>供人歇息聊天，树旁还有个水缸供路人取水解渴。',
   objects: {
@@ -56,7 +56,7 @@ const _square = {
   },
 };
 
-const _tree = {
+var _tree = {
   short: '榕树上',
   long: '你现在正在一株巨大的榕树上，茂密的枝叶搔得你有些发痒，前面一根粗大的树枝上有人放着一块垫子。',
   objects: {

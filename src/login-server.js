@@ -1,19 +1,20 @@
 'use strict';
 
-const Class = require('mixin-pro').createClass;
+(function(){
 
-const path = require('path'),
+var path = require('path'),
       socketio = require('socket.io'),
       express = require('express'),
       http = require('http'),
       redis = require('redis'),
       iosredis = require('socket.io-redis');
 
-import { User } from './user.js;'
+var Class = require('mixin-pro').createClass;
+var User = require('./models/user.js');
 
-const _instances = {};
+var _instances = {};
 
-export const LoginServer = Class({
+var LoginServer = Class({
   constructor: function LoginServer( conf ) {
     this.conf = conf;
     this.DROP_KICK_TIME = 30; // 30 sec
@@ -38,7 +39,7 @@ export const LoginServer = Class({
   startup: function() {
     if(this.isRunning) throw new Error('server is already running.');
 
-    const redis_conf = this.conf.redis;
+    var redis_conf = this.conf.redis;
 
     // use redis as data storage
     this.db = redis.createClient(redis_conf.port, redis_conf.host, {});
@@ -56,7 +57,7 @@ export const LoginServer = Class({
       console.log('pub redis eror: ' + err);
     });
 
-    const self = this;
+    var self = this;
     this.db.incr('server:seq', function(err, instanceId){
       if(err) return;
       self.startInstance(instanceId);
@@ -66,14 +67,14 @@ export const LoginServer = Class({
   startInstance: function(instanceId) {
     this.id = instanceId;
 
-    const self = this;
-    const conf = this.conf;
-    const db = this.db;
-    const now = Date.now();
+    var self = this;
+    var conf = this.conf;
+    var db = this.db;
+    var now = Date.now();
 
     // init userver instance info & expire in 5 seconds,
     // we have to update it every 5 seconds, as heartbeat info
-    const key = 'server:#' + instanceId;
+    var key = 'server:#' + instanceId;
     db.multi().mset(key, {
       id: instanceId,
       started: now,
@@ -87,9 +88,9 @@ export const LoginServer = Class({
     });
 
     // init network listener
-    const app = express().use(express.static(conf.www));
-    const httpserver = http.createServer(app);
-    const io = this.io = socketio.listen(httpserver);
+    var app = express().use(express.static(conf.www));
+    var httpserver = http.createServer(app);
+    var io = this.io = socketio.listen(httpserver);
     io.adapter(ioredis({
       host: conf.redis.host,
       port: conf.redis.port,
@@ -107,7 +108,7 @@ export const LoginServer = Class({
     }, 1000);
 
     // init listener for message hub
-    const sub = this.sub;
+    var sub = this.sub;
     sub.on('subscribe', function(channel, count){});
     sub.on('message', function(channel, message){
       var words = channel.split('#');
@@ -116,9 +117,9 @@ export const LoginServer = Class({
           self.onMessage(message);
           break;
         case 'user':
-          const uid = words[1];
+          var uid = words[1];
           if(uid) {
-            const user = self.users[uid];
+            var user = self.users[uid];
             if(user) user.onMessage(message);
           }
           break;
@@ -138,7 +139,7 @@ export const LoginServer = Class({
     if(this.timer) clearInterval(this.timer);
 
     // clear server entry in db
-    const db = this.db;
+    var db = this.db;
     db.multi().del('server:#' + this.id).zrem('server:all', this.id).exec(function(err, ret){
       db.quit();
     });
@@ -147,15 +148,15 @@ export const LoginServer = Class({
     if(this.io) this.io.close();
 
     // kick all connected users
-    const users = this.users;
-    for(const i in users) {
+    var users = this.users;
+    for(var i in users) {
       users[i].onDrop();
       delete users[i];
     }
 
     // close all connections
-    const sockets = this.sockets;
-    for(const i in sockets) {
+    var sockets = this.sockets;
+    for(var i in sockets) {
       sockets[i].disconnect();
       delete sockets[i];
     }
@@ -172,12 +173,12 @@ export const LoginServer = Class({
   },
 
   tick: function() {
-    const self = this;
-    const users = this.users;
-    const dropped = this.dropped;
+    var self = this;
+    var users = this.users;
+    var dropped = this.dropped;
 
     if(this.db && this.id) {
-      const key = 'server:#' + this.id;
+      var key = 'server:#' + this.id;
       this.db.multi()
         .hset(key, 'users', self.usersCount).expire(key, 5)
         .zremrangebyscore('server:all', 0, Date.now()-5000)
@@ -188,7 +189,7 @@ export const LoginServer = Class({
     for(var i in dropped) {
       if(dropped[i] -- <= 0) {
         delete dropped[i];
-        const user = users[i];
+        var user = users[i];
         if(user) {
           self.logoutUser(user);
         }
@@ -205,7 +206,7 @@ export const LoginServer = Class({
   },
 
   onConnected: function(sock) {
-    const server = this;
+    var server = this;
 
     if(this.logTraffic) {
       console.log('client connected, socket id: ' + sock.id);
@@ -246,7 +247,7 @@ export const LoginServer = Class({
 
     sock.on('rpc', function(req){ // remote call
       // common callback to send return message for RPC call
-      const reply = function(err, ret) {
+      var reply = function(err, ret) {
         return sock.emit('reply', { // reply to remote call
           seq: req.seq,
           err: err,
@@ -256,12 +257,12 @@ export const LoginServer = Class({
 
       if(typeof req !== 'object' || typeof req.f !== 'string') return reply(400, 'invalid rpc req');
 
-      const funcName = 'onUser_' + req.f;
+      var funcName = 'onUser_' + req.f;
       let method = server[funcName];
       if(typeof method == 'function') {
         method.call(server, sock, req);
       } else {
-        const user = sock.users[ req.uid ];
+        var user = sock.users[ req.uid ];
         if(!user || user.pin !== req.pin) return reply(403, 'invalid uid or pin, login required');
 
         method = user[funcName];
@@ -287,14 +288,14 @@ export const LoginServer = Class({
   },
 
   onDisconnected: function(sock) {
-    const server = this;
-    const now = Date.now();
-    const pub = server.pub;
-    const users = sock.users;
+    var server = this;
+    var now = Date.now();
+    var pub = server.pub;
+    var users = sock.users;
     if(users) {
-      for(const uid in users) {
+      for(var uid in users) {
         pub.publish('user:log', 'user (' + uid + ') drop offline');
-        const user = users[uid];
+        var user = users[uid];
         if(user) {
           server.dropped[uid] = server.DROP_KICK_TIME;
           user.onDrop();
@@ -310,8 +311,8 @@ export const LoginServer = Class({
 
   // args: {}
   onUser_fastsignup: function(sock, req, reply) {
-    const server = this;
-    const args = req.args = {};
+    var server = this;
+    var args = req.args = {};
     this.db.incr('user:seq', function(err, ret){
       if(err) reply(500, 'db error');
       args.uid = 'u' + ret;
@@ -323,23 +324,23 @@ export const LoginServer = Class({
 
   // args: { uid, passwd, name, phone, email, uuid }
   onUser_signup: function(sock, req, reply) {
-    const args = req.args;
+    var args = req.args;
     if(!args || typeof args !== 'object') return reply(400, 'bad request');
-    const uid = args.uid;
+    var uid = args.uid;
     if(!uid || typeof uid !== 'string' || uid.length < 3) return reply(400, 'invalid uid, must be >= 3 letters');
     this.signupUser(sock, req, reply);
   },
 
   // args: { uid, passwd }
   onUser_login: function(sock, req, reply) {
-    const server = this;
-    const db = this.db;
+    var server = this;
+    var db = this.db;
 
-    const args = req.args;
+    var args = req.args;
     if(!args || typeof args !== 'object') return reply(400, 'bad request');
 
-    const uid = args.uid;
-    const uidkey = 'user:#' + uid;
+    var uid = args.uid;
+    var uidkey = 'user:#' + uid;
     db.hgetall(uidkey, function(err, userinfo){
       // validate login
       if(err) return reply(500, 'db error');
@@ -356,8 +357,8 @@ export const LoginServer = Class({
       }
       user.setProfile(userinfo);
 
-      const now = Date.now();
-      const pin = Math.floor((0.1 + Math.random()) * now);
+      var now = Date.now();
+      var pin = Math.floor((0.1 + Math.random()) * now);
 
       // link sock to user object
       let isRelogin = false;
@@ -410,11 +411,11 @@ export const LoginServer = Class({
   },
 
   onUser_logout: function(sock, req, reply) {
-    const uid = req.uid;
-    const users = sock.users;
+    var uid = req.uid;
+    var users = sock.users;
     if(!uid || !users) return reply(400, 'invalid request');
 
-    const user = users[uid];
+    var user = users[uid];
     if(!user || user.pin !=== req.pin) return reply(403, 'access denied');
 
     reply(0, {
@@ -441,11 +442,11 @@ export const LoginServer = Class({
   },
 
   signupUser: function(sock, req, reply) {
-    const server = this;
+    var server = this;
     if(!req || !req.args || !req.args.uid) return reply(400, 'invalid request, uid required');
 
-    const uid = req.args.uid;
-    const uidkey = 'user:#' + uid;
+    var uid = req.args.uid;
+    var uidkey = 'user:#' + uid;
     this.db.hgetall(uidkey, function(err, ret){
       if(err) return reply(500, 'db error');
       if(ret) return reply(409, 'user id ' + uid + ' already exits');
@@ -454,8 +455,8 @@ export const LoginServer = Class({
   },
 
   createNewUser: function(sock, req, reply) {
-    const server = this;
-    const args = req.args;
+    var server = this;
+    var args = req.args;
 
     let userRecord = {
       uid: args.uid,
@@ -473,15 +474,15 @@ export const LoginServer = Class({
     };
 
     // copy default data for new user if configured
-    const newUserConf = server.conf.new_user;
+    var newUserConf = server.conf.new_user;
     if(newUserConf) {
       for(var i in newUserConf) {
         userRecord[i] = newUserConf[i];
       }
     }
 
-    const uid = req.args.uid;
-    const uidkey = 'user:#' + uid;
+    var uid = req.args.uid;
+    var uidkey = 'user:#' + uid;
     this.db.multi().incr('user:count').hmset(uidkey, userRecord).exec(function(){
       if(err) return reply(500, 'db error');
       return reply(0, { uid:uid, passwd: args.passwd });
@@ -495,8 +496,8 @@ export const LoginServer = Class({
     user.push('bye', 'logout');
     user.removeLink();
 
-    const uid = user.uid;
-    const uidkey = 'user:#' + uid;
+    var uid = user.uid;
+    var uidkey = 'user:#' + uid;
     this.db.multi().hset(uidkey, 'online', 0).zrem('user:online', uid).exec();
 
     this.sub.unsubscribe('user:#' + uid);
@@ -505,3 +506,7 @@ export const LoginServer = Class({
     this.pub.publish('user:log', 'user (' + uid + ') logout');
   },
 });
+
+exports = module.exports = LoginServer;
+
+})();

@@ -223,7 +223,7 @@ export const LoginServer = Class({
     });
 
     sock.on('hello', function(req){
-      sock.emit('push', {
+      sock.emit('notify', {
         uid: null,
         e: 'prompt',
         args: {
@@ -244,7 +244,7 @@ export const LoginServer = Class({
       });
     });
 
-    sock.on('call', function(req){ // remote call
+    sock.on('rpc', function(req){ // remote call
       // common callback to send return message for RPC call
       const reply = function(err, ret) {
         return sock.emit('reply', { // reply to remote call

@@ -1,6 +1,6 @@
-exports = module.exports = function Client(socket) {
+(function(){
+function Client(socket) {
   this.reset();
-  this.bind(socket);
 };
 
 Client.prototype = {
@@ -47,9 +47,16 @@ Client.prototype = {
     delete this.rpc_callbacks[seq];
   },
 
-  bind: function(sock) {
+  bind: function(sock, debugMode) {
     var client = this;
     this.sock = sock;
+    if(debugMode) sock.log_traffic = true;
+
+    sock.on('hello', function(msg){
+      if(sock.log_traffic) console.log('hello', msg);
+      if(!msg || (typeof msg!=='object')) return;
+      client.fireEvent('hello', msg);
+    });
 
     sock.on('notify', function(msg){
       if(sock.log_traffic) console.log('notify', msg);
@@ -58,7 +65,7 @@ Client.prototype = {
     });
 
     sock.on('reply', function(msg){
-      if(sock.log_traffic) console.log('notify', msg);
+      if(sock.log_traffic) console.log('reply', msg);
       if(!msg || (typeof msg!=='object') || !msg.seq) return;
       client.callback(msg.seq, msg.args);
     });
@@ -66,7 +73,7 @@ Client.prototype = {
 
 /*
  * accepted methods and args:
- * 
+ *
  * fastsignup, 0
  * signup, {uid, passwd, name, email, phone, uuid}
  * login, {uid, passwd}
@@ -115,3 +122,10 @@ Client.prototype = {
     return this;
   },
 };
+
+  if(typeof module === 'object' && typeof module.exports === 'object')
+    module.exports = Client;
+
+  if(window && typeof window === 'object')
+    window.LoginClient = Client;
+})();

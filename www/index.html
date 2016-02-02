@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+<head>
+<meta charset='utf-8'>
+<title>RayMud</title>
+<link rel="stylesheet" href="css/main.css"/>
+<script src="/socket.io/socket.io.js"></script>
+<script src="js/jquery-1.12.0.js"></script>
+<script src="js/login-client.js"></script>
+<script src="js/main.js"></script>
+</head>
+<body>
+  <div id='root'>
+    <div id='main'>
+      <div id='page-scene' class='pageview'>
+        <div class='titlebar' id='title-scene'>当前场景</div>
+      </div>
+      <div id='page-vision' class='pageview'>
+        <div class='titlebar' id='title-scene'>情节动态</div>
+      </div>
+      <div id='page-chat' class='pageview'>
+        <div class='titlebar' id='title-scene'>聊天</div>
+        <div id='msg'></div>
+        <div id='chat-input'>
+          <input type='text' id='chat-input-box'/><button id='chat-send'>发送</button>
+        </div>
+      </div>
+      <div id='page-bag' class='pageview'>
+        <div class='titlebar' id='title-scene'>我的背包</div>
+      </div>
+      <div id='page-me' class='pageview'>
+        <div class='titlebar' id='title-scene'>我的资料</div>
+      </div>
+      <div id='pop-root'></div>
+    </div>
+    <div id='navbar'>
+      <button class='navbtn' nav='page-scene'>场景</button><button class='navbtn' nav='page-vision'>动态</button><button class='navbtn' nav='page-chat'>聊天</button><button class='navbtn' nav='page-bag'>背包</button><button class='navbtn' nav='page-me'>我</button>
+    </div>
+  </div>
+</body>
+</html>

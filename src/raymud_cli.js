@@ -2,8 +2,8 @@
 
 'use strict';
 
-import { LoginServer } from './loginserver.js';
-import { WorldServer } from './worldserver.js';
+import { LoginServer } from './login-server.js';
+import { WorldServer } from './world-server.js';
 import { conf } from './raymud.conf.js';
 
 var args = require('minimist')(process.argv.slice(2));

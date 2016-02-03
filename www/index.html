@@ -13,29 +13,33 @@
 <body>
   <div id='root'>
     <div id='main'>
-      <div id='page-scene' class='pageview'>
-        <div class='titlebar' id='title-scene'>当前场景</div>
+      <div id='scene-page' class='pageview'>
+        <div class='titlebar' id='scene-title'>当前场景</div>
+        <div class='content' id='scene-content'></div>
       </div>
-      <div id='page-vision' class='pageview'>
-        <div class='titlebar' id='title-scene'>情节动态</div>
+      <div id='vision-page' class='pageview'>
+        <div class='titlebar' id='vision-title'>情节动态</div>
+        <div class='content' id='vision-content'></div>
       </div>
-      <div id='page-chat' class='pageview'>
-        <div class='titlebar' id='title-scene'>聊天</div>
-        <div id='msg'></div>
+      <div id='chat-page' class='pageview'>
+        <div class='titlebar' id='chat-title'>聊天</div>
+        <div id='chat-content'></div>
         <div id='chat-input'>
           <input type='text' id='chat-input-box'/><button id='chat-send'>发送</button>
         </div>
       </div>
-      <div id='page-bag' class='pageview'>
-        <div class='titlebar' id='title-scene'>我的背包</div>
+      <div id='bag-page' class='pageview'>
+        <div class='titlebar' id='bag-title'>我的背包</div>
+        <div class='content' id='bag-content'></div>
       </div>
-      <div id='page-me' class='pageview'>
-        <div class='titlebar' id='title-scene'>我的资料</div>
+      <div id='me-page' class='pageview'>
+        <div class='titlebar' id='me-title'>我的资料</div>
+        <div class='content' id='me-content'></div>
       </div>
       <div id='pop-root'></div>
     </div>
     <div id='navbar'>
-      <button class='navbtn' nav='page-scene'>场景</button><button class='navbtn' nav='page-vision'>动态</button><button class='navbtn' nav='page-chat'>聊天</button><button class='navbtn' nav='page-bag'>背包</button><button class='navbtn' nav='page-me'>我</button>
+      <button class='navbtn' nav='scene-page'>场景</button><button class='navbtn' nav='vision-page'>动态</button><button class='navbtn' nav='chat-page'>聊天</button><button class='navbtn' nav='bag-page'>背包</button><button class='navbtn' nav='me-page'>我</button>
     </div>
   </div>
 </body>

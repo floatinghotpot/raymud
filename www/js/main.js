@@ -1,8 +1,8 @@
 var client = new LoginClient();
 
 function echo(str) {
-  var log = $('div#page-vision');
-  log.html( log.html() + str);
+  var log = $('div#vision-content');
+  log.html( log.html() + '<pre>' + str + '</pre>');
 }
 
 var saveUserId = 'saveUserId';
@@ -46,7 +46,7 @@ function login(u, p) {
 
 client.on('hello', function(event, args){
   console.log(event, args);
-  var log = $('div#page-vision');
+  var log = $('div#vision-content');
   log.html( log.html() + JSON.stringify(args));
 
   setTimeout(function(){
@@ -71,27 +71,32 @@ client.on('hello', function(event, args){
 });
 
 client.on('scene', function(event, args){
-  var log = $('div#page-scene');
+  var log = $('div#scene-content');
   log.html(JSON.stringify(args));
 });
 
 client.on('look', function(event, args){
-  var log = $('div#page-scene');
+  var log = $('div#scene-content');
   log.html(JSON.stringify(args));
 });
 
+client.on('vision', function(event, args){
+  var log = $('div#vision-content');
+  log.html( log.html() + '<pre>' + args + '</pre>');
+});
+
 client.on('feedback', function(event, args){
-  var log = $('div#page-vision');
-  log.html( log.html() + JSON.stringify(args));
+  var log = $('div#vision-content');
+  log.html( log.html() + '<pre>' + args + '</pre>');
 });
 
 client.on('chat', function(event, args){
-  var log = $('div#page-chat');
-  log.html( log.html() + JSON.stringify(args));
+  var log = $('div#chat-content');
+  log.html( log.html() + '<br/>' + JSON.stringify(args));
 });
 
-var homePage = 'page-scene';
-var activePage = 'page-scene';
+var homePage = 'scene-page';
+var activePage = 'scene-page';
 
 function showPage(pageid) {
   if(pageid) activePage = pageid;
@@ -99,14 +104,14 @@ function showPage(pageid) {
   if(compactMode) {
     $('div.pageview').hide();
     $('div#'+activePage).show();
-    if(activePage === 'page-chat') {
+    if(activePage === 'chat-page') {
       $('div#chat-input').css({bottom:50});
     }
   } else {
     $('div.pageview').show();
     $('div#chat-input').css({bottom:0});
   }
-  var w = $('div#page-chat').width();
+  var w = $('div#chat-page').width();
   $('input#chat-input-box').css({width:(w-100)});
 }
 

@@ -81,12 +81,7 @@ var WorldServer = Class({
       id: instanceId,
       started: now,
       players: 0,
-    }).expire(key, 5).zadd('world:list', now, instanceId).exec();
-
-    // init tick() timer
-    self.timer = setInterval(function(){
-      self.tick();
-    }, 1000);
+    }).expire(key, 5).exec();
 
     // init listener for message hub
     var sub = this.sub;
@@ -113,6 +108,12 @@ var WorldServer = Class({
     _instances[instanceId] = this;
     this.isRunning = true;
     this.pub.publish('world:log', 'world #' + instanceId + ' started');
+
+      // init tick() timer
+    self.tick();
+    self.timer = setInterval(function(){
+      self.tick();
+    }, 1000);
   },
 
   setup: function() {

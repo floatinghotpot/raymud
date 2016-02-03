@@ -99,11 +99,6 @@ var LoginServer = Class({
       console.log('listening on ' + conf.server.host + ':' + conf.server.port);
     });
 
-    // init tick() timer
-    self.timer = setInterval(function(){
-      self.tick();
-    }, 1000);
-
     // init listener for message hub
     var sub = this.sub;
     sub.on('subscribe', function(channel, count){
@@ -130,6 +125,12 @@ var LoginServer = Class({
     _instances[instanceId] = this;
     this.isRunning = true;
     this.pub.publish('server:log', 'server #' + instanceId + ' started');
+
+    // init tick() timer
+    self.tick();
+    self.timer = setInterval(function(){
+      self.tick();
+    }, 1000);
   },
 
   shutdown: function() {

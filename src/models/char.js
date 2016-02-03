@@ -106,19 +106,40 @@ var CHAR = Class(OBJ, {
 
   // scene, look (char/item), vision / tell, feedback, chat/emote, combat
   notify: function(event, args) {
+    // console.log(event, args);
     if(!this._uid) return;
     var pub = this._world.pub;
-    pub.publish('user:#' + this._uid, JSON.stringify({
+    var req = {
       f: 'notify',
       uid: this._uid,
       e: event,
       args: args,
-    }));
+    };
+    pub.publish('user:#' + this._uid, JSON.stringify(req));
   },
 
   scene: function() {
     var env = this.environment();
-    if(env) this.notify('scene', env.looksInside());
+    if(env) {
+      this.notify('scene', env.looksInside());
+    }
+  },
+
+  move: function(dest) {
+    switch(typeof dest) {
+    case 'object':
+      break;
+    case 'string':
+      dest = this._world.loadObject(this.absKey(dest));
+      break;
+    default:
+      this.notifyFail('move: invalid destination, expected: object or string, got: ' + dest);
+    }
+
+    this.putInto(dest);
+    this.scene();
+
+    return 1;
   },
 
   look: function(ob) {
@@ -188,6 +209,7 @@ var CHAR = Class(OBJ, {
   },
 
   save: function(reply) {
+    if(!reply) reply = function(){};
     if(!this._uid) return reply(500, 'no uid is found when save');
 
     // TODO:
@@ -195,6 +217,7 @@ var CHAR = Class(OBJ, {
   },
 
   load: function(uid, reply) {
+    if(!reply) reply = function(){};
     if(!this._uid) return reply(500, 'no uid is found when save');
 
     // TODO:

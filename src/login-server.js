@@ -106,14 +106,17 @@ var LoginServer = Class({
 
     // init listener for message hub
     var sub = this.sub;
-    // sub.on('subscribe', function(channel, count){});
+    sub.on('subscribe', function(channel, count){
+      console.log('subscribed to: ' + channel + ', ' + count);
+    });
     sub.on('message', function(channel, message){
+      // console.log(channel, message);
       var words = channel.split('#');
       switch(words[0]) {
-      case 'server':
+      case 'server:':
         self.onMessage(message);
         break;
-      case 'user':
+      case 'user:':
         var uid = words[1];
         if(uid) {
           var user = self.users[uid];
@@ -199,8 +202,9 @@ var LoginServer = Class({
     delete this.dropped[uid];
   },
 
+  // message receive from message hub
   onMessage: function(msg) {
-    // console.log('server onMessage: ' + msg);
+    console.log('login-server onMessage: ' + msg);
   },
 
   onConnected: function(sock) {
@@ -244,7 +248,7 @@ var LoginServer = Class({
     });
 
     sock.on('rpc', function(req){ // remote call
-      console.log(req);
+      // console.log(req);
       // common callback to send return message for RPC call
       var reply = function(err, ret) {
         return sock.emit('reply', { // reply to remote call

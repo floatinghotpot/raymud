@@ -70,9 +70,23 @@ client.on('hello', function(event, args){
   }, 200);
 });
 
-client.on('notify', function(event, args){
-  console.log(event, args);
+client.on('scene', function(event, args){
+  var log = $('div#page-scene');
+  log.html(JSON.stringify(args));
+});
+
+client.on('look', function(event, args){
+  var log = $('div#page-scene');
+  log.html(JSON.stringify(args));
+});
+
+client.on('feedback', function(event, args){
   var log = $('div#page-vision');
+  log.html( log.html() + JSON.stringify(args));
+});
+
+client.on('chat', function(event, args){
+  var log = $('div#page-chat');
   log.html( log.html() + JSON.stringify(args));
 });
 

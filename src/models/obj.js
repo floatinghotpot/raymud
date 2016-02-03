@@ -36,7 +36,7 @@ var OBJ = Class({
     if(typeof data !== 'object') throw new Error('setData: object required');
     for(var prop in data) {
       if(prop.indexOf('/')>=0) {
-        this.setDeep(prop, data);
+        this.setDeep(prop, data[prop]);
       } else {
         this.set(prop, data[prop]);
       }
@@ -68,11 +68,12 @@ var OBJ = Class({
   // setDeep('prop1/sub/sub2', data);
   setDeep: function(prop, data) {
     var words = prop.split('/');
+    if(!this._data) this._data = {};
     var _data = this._data;
     var n = words.length -1;
     for(var i=0; i<n; i++) {
       var d = _data[words[i]];
-      if(!d) _data[words[i]] = {};
+      if(!d) d = _data[words[i]] = {};
       _data = d;
     }
     _data[words[n]] = data;
@@ -117,9 +118,7 @@ var OBJ = Class({
     return this.query('name') || this.constructor.name;
   },
   short: function() {
-    var str = this.query('short', 1) || this.name(1);
-    str += '(' + this.query('id') + ')';
-    return str;
+    return this.query('short', 1) || this.name(1);
   },
   long: function(raw) {
     return this.query('long', raw) || (this.name() + '看起来没有什么特别。\n');
@@ -160,7 +159,7 @@ var OBJ = Class({
       objs[key] = this._objs[key].short();
     }
     return {
-      type: this.varructor.name,
+      type: this.constructor.name,
       short: this.short(),
       long: this.long(),
       objects: objs,
@@ -186,92 +185,6 @@ var OBJ = Class({
   },
   removeAction: function(key) {
     delete this._actions[key];
-  },
-
-  // ======================
-  // F_MOVE
-  queryMaxEncumb: function() {
-    return this.query('max_encumb') || 0;
-  },
-  queryMaxInventory: function() {
-    return this.query('max_inventory') || 0;
-  },
-  setMaxEncumb: function(v) {
-    this.set('max_encumb', v);
-    return this;
-  },
-  setMaxInventory: function(v) {
-    this.set('max_inventory', v);
-    return this;
-  },
-  queryWeight: function() {
-    return this.query('weight') || 0;
-  },
-  queryEncumb: function() {
-    return this.query('encumb') || 0;
-  },
-  weight: function() {
-    return this.queryWeight() + this.queryEncumb();
-  },
-  setWeight: function(w) {
-    var env = this.environment();
-    if(env) env.addEncumb(w - this.query('weight'));
-    this.set('weight', w);
-  },
-  addEncumb: function(w) {
-    this.set('encumb', (this.query('encumb') || 0) + w);
-    var env = this.environment();
-    env.addEncumb(w);
-  },
-  receiveObject: function(ob, fromInventory, player) {
-    if(!fromInventory && (this.query('encumb')+this.weight() > this.query('max_encumb'))) {
-      return player.notifyFail(ob.name() + '太重了。\n');
-    }
-
-    var items = this.inventory();
-    var n = _.size(items);
-    var maxInv = this.queryMaxInventory();
-    if(maxInv>0 && n>=maxInv) {
-      return player.notifyFail(this.name() + '装不下了。\n');
-    }
-  },
-
-  move: function(dest, silently, player) {
-    if(this.query('equipped') && !(this.unequp())) {
-      return player.notifyFail('你没办法取下这样东西。\n');
-    }
-
-    switch(typeof dest) {
-    case 'object':
-      break;
-    case 'string':
-      dest = this._world.loadObject(this.absKey(dest));
-      break;
-    default:
-      player.notifyFail('move: invalid destination, expected: object or string, got: ' + dest);
-    }
-
-    // Check if the destination is our environment ( or environment of
-    // environment ..., recursively ). If so, encumbrance checking is omited.
-    var env = this;
-    while((env = env.environment())) if(env === dest) break;
-    if(!dest) return 0;
-    if(!dest.receiveObject(this, env, player)) return 0;
-
-    // Move the object and update encumbrance
-    var w = this.weight();
-    env = this.environment();
-    if(env) env.addEncumb(-w);
-
-    this.putInto(dest);
-
-    // The destination might self-destruct in init(), check it before we
-    // do environment maintains.
-    env = this.environment();
-    if(!env) return 0;
-
-    env.addEncumb(w);
-    return 1;
   },
 
   // ======================

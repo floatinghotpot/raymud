@@ -91,10 +91,9 @@ var WorldServer = Class({
     // init listener for message hub
     var sub = this.sub;
     sub.on('subscribe', function(channel, count){
-      console.log('subscribed to channel: ' + channel + ', ' + count);
+      console.log('subscribed to: ' + channel + ', ' + count);
     });
     sub.on('message', function(channel, message){
-      console.log(channel, message);
       var words = channel.split('#');
       switch(words[0]) {
       case 'world:':
@@ -301,7 +300,6 @@ var WorldServer = Class({
   },
 
   onMessage: function(msg) {
-    console.log('world-server onMessage: ' + msg);
     var req = null;
     try {
       req = JSON.parse(msg);
@@ -345,32 +343,33 @@ var WorldServer = Class({
 
   onCharCmdenter: function(req, reply) {
     var world = this;
-    console.log(req, reply);
     var uid = req.uid;
-    if(!uid) return;
-    if(this.players[uid]) return;
-    var player = this.cloneObject('/player');
+    var player = this.players[req.uid];
     if(player) {
-      // link player character with user with same uid
-      player.linkUser(uid);
+      player.scene();
+      reply(0, {});
+    } else {
+      player = this.cloneObject('/player');
+      if(player) {
+        // link player character with user with same uid
+        this.players[uid] = player;
+        player.linkUser(uid);
 
-      player.load(uid, function(err, ret) {
-        if(err) return reply(500, 'fail load player data');
+        player.load(uid, function(err, ret) {
+          if(err) return reply(500, 'fail load player data');
 
-        var conf = world.conf;
-        if(ret === 0) { // new player
-          player.setData(conf.new_char);
-          player.save();
-        }
+          var conf = world.conf;
+          if(ret === 0) { // new player
+            player.setData(conf.new_char);
+            player.save();
+          }
 
-        var startRoom = player.query('last_room') || conf.entries[ Math.floor(Math.random() * conf.entries.length) ];
-        console.log(startRoom);
-        player.move(startRoom);
-        reply(0, {});
-      });
+          var startRoom = player.query('last_room') || conf.entries[ Math.floor(Math.random() * conf.entries.length) ];
+          player.move(startRoom);
+          reply(0, {});
+        });
+      }
     }
-    console.log(player._data);
-    //console.log(player.environment().short());
   },
 
   onCharCmdexit: function(req, reply) {
@@ -389,7 +388,7 @@ var WorldServer = Class({
     if(!player) return reply(404, 'player not found: ' + req.uid);
 
     player.set('offline', 1);
-    player.vision('$N掉线了。\n', player);
+    player.vision('vision', '$N掉线了。\n', player);
   },
 
   onCharCmdreconnect: function(req, reply) {
@@ -397,7 +396,7 @@ var WorldServer = Class({
     if(!player) return reply(404, 'player not found: ' + req.uid);
 
     player.unset('offline', 1);
-    player.vision('$N重新连线了。\n', player);
+    player.vision('vision', '$N重新连线了。\n', player);
   },
 
   onCharCmdreload: function(req, reply) {

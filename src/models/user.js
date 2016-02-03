@@ -148,8 +148,8 @@ var User = Class({
       }));
     }
 
-    var sub = this.server.sub;
-    sub.subscribe('user:#' + this.uid);
+    //var sub = this.server.sub;
+    //sub.subscribe('user:#' + this.uid);
   },
 
   onLogout: function() {
@@ -173,8 +173,8 @@ var User = Class({
     return this;
   },
 
-  // message receive from message hub
   onMessage: function(msg) {
+    // console.log('user.onMessage', msg);
     var req = null;
     try {
       req = JSON.parse(msg);

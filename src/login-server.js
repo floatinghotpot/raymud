@@ -274,7 +274,7 @@ var LoginServer = Class({
           method.call(user, req, reply);
         } else if(user.world) {
           var worldkey = 'world:#' + user.world;
-          req.f = 'rpc';
+          req.f = 'cmd';
           server.pub.publish(worldkey, JSON.stringify(req));
         } else {
           return reply(404, 'user rpc method not defined: ' + funcName);
@@ -464,7 +464,7 @@ var LoginServer = Class({
     var server = this;
     var args = req.args;
 
-    let userRecord = {
+    var userRecord = {
       uid: args.uid,
       name: args.name,
       passwd: args.passwd,

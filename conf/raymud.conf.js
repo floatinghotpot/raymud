@@ -2,7 +2,7 @@ exports = module.exports = {
   server: {
     host: '0.0.0.0',
     port: 7000,
-    hello_msg: '江湖梦、侠客行。欢迎进入『我的武林』。\n阅读、互动，手机触屏操作全新演绎 MUD 游戏经典。',
+    hello_msg: '江湖梦、侠客行。欢迎进入互动小说『我的武林』，全新演绎 MUD 游戏经典。',
     version: 20160129,
     client_req: 20160129,
   },

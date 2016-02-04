@@ -1,15 +1,15 @@
 {
   "name": "raymud",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Web-based MUD game powered by nodejs & socket.io",
-  "main": "index.js",
+  "main": "src/index.js",
   "bin": {
-    "raymud-server": "./dist/raymud_cli.js",
-    "raymud-logger": "./dist/logger_cli.js"
+    "raymud-server": "./src/raymud_cli.js",
+    "raymud-logger": "./src/logger_cli.js"
   },
   "scripts": {
-    "start": "node ./dist/raymud_cli.js",
-    "debug": "node --debug ./dist/raymud_cli.js",
+    "start": "node ./src/raymud_cli.js",
+    "debug": "node --debug ./src/raymud_cli.js",
     "clean": "rm -rf dist",
     "build": "babel ./src -d ./dist -s",
     "rebuild": "npm run clean && npm run build",

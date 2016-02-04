@@ -145,11 +145,15 @@ var CHAR = Class(OBJ, {
   look: function(ob) {
     if(!ob) {
       this.scene();
-    } else if(ob.instanceOf(CHAR)) {
-      this.notify('look', ob.looks());
-      if(this !== ob && ob.query('is_player')) ob.tell('vision', '$N正盯着你看，不知道打些什么主意。\n', this, ob);
     } else {
-      this.notify('look', ob.looks());
+      if(typeof ob === 'string') ob = this._world.loadObject(this.absKey(ob));
+
+      if(ob.instanceOf(CHAR)) {
+        this.notify('look', ob.looks());
+        if(this !== ob && ob.query('is_player')) ob.tell('vision', '$N正盯着你看，不知道打些什么主意。\n', this, ob);
+      } else {
+        this.notify('look', ob.looks());
+      }
     }
   },
 
@@ -224,8 +228,40 @@ var CHAR = Class(OBJ, {
     return reply(0, 0);
   },
 
+  go: function(dir, reply) {
+    var env = this.environment();
+    if(env) {
+      var room = env.nextRoom(dir);
+      if(room) {
+        this.move(room);
+        return reply(0, '你来到'+room.short()+'。');
+      }
+    }
+    return reply(404, '这个方向没有出口。');
+  },
+
+  dummyReply: function(err, ret) {},
+
+  command: function(str, reply) {
+    if(!reply) reply = this.dummyReply;
+
+    var words = str.split(' ');
+    var cmd = words.shift();
+    var params = words.join(' ');
+
+    switch(cmd) {
+      case 'look':
+        this.look(params, reply);
+        break;
+      case 'go':
+        this.go(params, reply);
+        break;
+    }
+  },
+
   onCharCmd: function(req, reply) {
     // TODO:
+    this.command(req.args, reply);
   },
 
 });

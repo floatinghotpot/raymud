@@ -47,6 +47,15 @@ var ROOM = Class(OBJ, {
 
     return looks;
   },
+
+  nextRoom: function(dir) {
+    var e = this.query('exits');
+    if(e && typeof e === 'object' && (dir in e)) {
+      var key = this.absKey(e[dir]);
+      return this._world.rooms[key];
+    }
+    return null;
+  },
 });
 
 exports = module.exports = ROOM;

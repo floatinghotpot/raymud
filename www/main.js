@@ -1,15 +1,11 @@
 var client = new LoginClient();
 
-function echo(str) {
-  var log = $('div#vision-content');
-  log.html( log.html() + '<pre>' + str + '</pre>');
-}
-
 var saveUserId = 'saveUserId';
 var saveUserPasswd = 'saveUserPasswd';
 
 function enterWorld(id) {
   client.rpc('enter', id, function(err, ret){
+    if(!err) echo('你连线进入虚拟世界。\n');
   });
 }
 
@@ -23,11 +19,11 @@ function login(u, p) {
       localStorage.removeItem(saveUserPasswd);
       echo(ret);
     } else {
-      // $('#messages').empty();
-      // $('div#cmds').empty();
+      echo('自动登录成功。\n');
+
       localStorage.setItem(saveUserId, u);
       localStorage.setItem(saveUserPasswd, p);
-      echo(ret.token.uid + ' (' + ret.profile.name + ') ' + 'login success');
+      //echo(ret.token.uid + ' (' + ret.profile.name + ') ' + 'login success');
 
       client.rpc('worlds', 0, function(err, ret) {
         if(!err) {
@@ -52,13 +48,16 @@ function runCmd(str) {
     if(curScene && curScene.detail) {
       var whatLooks = curScene.detail[what];
       if(whatLooks) {
-        vision(whatLooks);
+        echo(whatLooks + '\n');
         return;
       }
     }
   }
   
   // TODO: send to server
+  client.rpc('cmd', str, function(err, ret) {
+    if(ret) echo(ret + '\n');
+  });
 }
 
 function onCmdLinkClicked(e) {
@@ -78,12 +77,12 @@ function title(str) {
   $('div#scene-title').html(str);
 }
 
-function vision(str) {
+function echo(str) {
   var t = $('div#vision-content');
-  t.html(t.html() + parseStr(str) + '<br/><br/>');
+  t.html(t.html() + parseStr(str) + '<br/>');
   $('a.cmd').on('click', onCmdLinkClicked);
   setTimeout(function(){
-    t.animate({ scrollTop: t.prop("scrollHeight") }, 1000);
+    t.animate({ scrollTop: t.prop("scrollHeight") }, 500);
   }, 50);
 }
 
@@ -99,7 +98,7 @@ function chat(args) {
   if(typeof args === 'str') 
     str = args;
   else if(typeof args === 'object')
-    str = args.short + ': ' + args.str + '<br/><br/>';
+    str = args.short + ': ' + args.str + '<br/>';
 
   var t = $('div#chat-logs');
   t.html(t.html() + str + '<br/>');
@@ -119,7 +118,7 @@ function me(args) {
 }
 
 client.on('hello', function(event, args){
-  vision(args.hello_msg + '\n版本号：' + args.version);
+  echo(args.hello_msg + '\n版本号：' + args.version +'\n');
 
   setTimeout(function(){
     var u = localStorage.getItem(saveUserId);
@@ -134,7 +133,7 @@ client.on('hello', function(event, args){
         if(err) {
           echo(err);
         } else {
-          echo(('account created: ') + ret.uid + '/' + ret.passwd);
+          echo(('自动创建了账号：') + ret.uid + '/' + ret.passwd);
           login(ret.uid, ret.passwd);
         }
       });
@@ -142,23 +141,61 @@ client.on('hello', function(event, args){
   }, 200);
 });
 
+var _dirs = {
+  east: '东',
+  west: '西',
+  south: '南',
+  north: '北',
+  'southeast': '东南',
+  'northeast': '东北',
+  'southwest': '西南',
+  'northwest': '西北',
+  'up': '上',
+  'down': '下',
+  'out': '外面',
+};
+
 client.on('scene', function(event, args){
-  console.log(args);
   title(args.short);
-  vision(args.long);
+  
+  var str = args.long + '\n';
+
+  var objs = args.objects;
+  if(objs && _.size(objs)>0) {
+    str += '你看见：';
+    var items = [];
+    for(var key in objs) {
+      var obj = objs[key];
+      items.push('<a cmd=\'look ' + key + '\'>' + obj + '</a>');
+    }
+    str += (items.join('、')) + '。\n';
+  }
+
+  var exits = args.exits;
+  if(exits && _.size(exits)>0) {
+    str += '这里明显的出口有：';
+    var items = [];
+    for(var i in exits) {
+      var room = exits[i];
+      items.push('<a cmd=\'go ' + i + '\'>' + (_dirs[i] || i) + '</a>（' + room + '）');
+    }
+    str += (items.join('、')) + '。\n';
+  }
+  echo(str);
   scene(args);
 });
 
 client.on('look', function(event, args){
+  echo(args.long);
   scene(args);
 });
 
 client.on('vision', function(event, args){
-  vision(args);
+  echo(args);
 });
 
 client.on('feedback', function(event, args){
-  vision(args);
+  echo(args);
 });
 
 client.on('chat', function(event, args){

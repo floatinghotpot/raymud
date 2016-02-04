@@ -1,9 +1,9 @@
-var conf = {
+exports = module.exports = {
   server: {
     host: '0.0.0.0',
     port: 7000,
-    hello_msg: '江湖梦、侠客行。这里是『我的武林』。阅读、互动，触屏操作，全新演绎 MUD 游戏经典。',
-    server: 20160129,
+    hello_msg: '江湖梦、侠客行。欢迎进入『我的武林』。\n阅读、互动，手机触屏操作全新演绎 MUD 游戏经典。',
+    version: 20160129,
     client_req: 20160129,
   },
   mongodb: 'mongodb://localhost:27017/es3',
@@ -29,5 +29,3 @@ var conf = {
     '/snow/inn_hall',
   ],
 };
-
-exports = module.exports = conf;

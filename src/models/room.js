@@ -42,6 +42,9 @@ var ROOM = Class(OBJ, {
       }
     }
 
+    var detail = this.query('detail');
+    if(detail) looks.detail = detail;
+
     return looks;
   },
 });

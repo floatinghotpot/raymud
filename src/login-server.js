@@ -221,7 +221,7 @@ var LoginServer = Class({
 
     sock.emit('hello', {
       sid: sock.id,
-      msg: this.conf.server.hellomsg,
+      hello_msg: this.conf.server.hello_msg,
       version: this.conf.server.version,
       'client_req': this.conf.server.client_req,
     });

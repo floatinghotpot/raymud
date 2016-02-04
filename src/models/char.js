@@ -194,7 +194,7 @@ var CHAR = Class(OBJ, {
         obj.notify('chat', {
           key: this._key,
           short: this.short(),
-          msg: str,
+          str: str,
         });
       }
     }

@@ -112,6 +112,11 @@ i#icon-smiley {
   padding: 0px;
 }
 
+a.cmd {
+  padding: 2px;
+  color: blue;
+}
+
 @media screen and (max-width: 800px) {
   body, input#chat-box {
     font: 18px Helvetica, Arial;

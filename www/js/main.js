@@ -44,23 +44,82 @@ function login(u, p) {
   });
 }
 
-function cmd(str) {
-  var log = $('div#chat-log');
-  log.html( log.html() + str + '<br/>');
+var curScene = {};
+
+function runCmd(str) {
+  if(str.indexOf('look ') === 0) {
+    var what = str.split(' ')[1];
+    if(curScene && curScene.detail) {
+      var whatLooks = curScene.detail[what];
+      if(whatLooks) {
+        vision(whatLooks);
+        return;
+      }
+    }
+  }
+  
+  // TODO: send to server
 }
 
-function look(what) {
-  
+function onCmdLinkClicked(e) {
+  var a = e.target;
+  var cmd = $(a).attr('cmd');
+  runCmd(cmd);
 }
 
-function go(where) {
-  
+function parseStr(str) {
+  str = str.replace('\n', '<br/>').replace(/<a cmd=/g, '<a href=\'#\' class=\'cmd\' cmd=');
+  console.log(str);
+  return str;
+}
+
+function title(str) {
+  document.title = '『我的武林』' + ' - ' + str;
+  $('div#scene-title').html(str);
+}
+
+function vision(str) {
+  var t = $('div#vision-content');
+  t.html(t.html() + parseStr(str) + '<br/><br/>');
+  $('a.cmd').on('click', onCmdLinkClicked);
+  setTimeout(function(){
+    t.animate({ scrollTop: t.prop("scrollHeight") }, 1000);
+  }, 50);
+}
+
+function scene(args) {
+  curScene = args;
+
+  var t = $('div#scene-content');
+  t.html(JSON.stringify(args));
+}
+
+function chat(args) {
+  var str = '';
+  if(typeof args === 'str') 
+    str = args;
+  else if(typeof args === 'object')
+    str = args.short + ': ' + args.str + '<br/><br/>';
+
+  var t = $('div#chat-logs');
+  t.html(t.html() + str + '<br/>');
+  setTimeout(function(){
+    t.animate({ scrollTop: t.prop("scrollHeight") }, 1000);
+  }, 50);
+}
+
+function bag(args) {
+  var t = $('div#bag-content');
+  t.html(JSON.stringify(args));
+}
+
+function me(args) {
+  var t = $('div#me-content');
+  t.html(JSON.stringify(args));
 }
 
 client.on('hello', function(event, args){
-  console.log(event, args);
-  var log = $('div#vision-content');
-  log.html( log.html() + JSON.stringify(args));
+  vision(args.hello_msg + '\n版本号：' + args.version + '\n');
 
   setTimeout(function(){
     var u = localStorage.getItem(saveUserId);
@@ -84,37 +143,30 @@ client.on('hello', function(event, args){
 });
 
 client.on('scene', function(event, args){
-  document.title = '我的武林' + ' - ' + args.short;
-
-  var title = $('div#scene-title');
-  title.html(args.short);
-
-  var content = $('div#scene-content');
-  content.html(JSON.stringify(args));
+  console.log(args);
+  title(args.short);
+  vision(args.long);
+  scene(args);
 });
 
 client.on('look', function(event, args){
-  var log = $('div#scene-content');
-  log.html(JSON.stringify(args));
+  scene(args);
 });
 
 client.on('vision', function(event, args){
-  var log = $('div#vision-content');
-  log.html( log.html() + '<pre>' + args + '</pre>' + '<br/>');
+  vision(args);
 });
 
 client.on('feedback', function(event, args){
-  var log = $('div#vision-content');
-  log.html( log.html() + '<pre>' + args + '</pre>' + '<br/>');
+  vision(args);
 });
 
 client.on('chat', function(event, args){
-  var log = $('div#chat-log');
-  log.html( log.html() + JSON.stringify(args) + '<br/>');
+  chat(args);
 });
 
-var homePage = 'scene';
-var activePage = 'scene';
+var homePage = 'vision';
+var activePage = 'vision';
 
 function adjustPageLayout(pageid, h) {
   var compactMode = $(window).width() <= 800;
@@ -196,7 +248,7 @@ $(document).ready(function(){
   $('input#chat-box').keydown(function(e){
     var keycode = e.which;
     if(keycode === 13) {
-      cmd($('input#chat-box').val());
+      chat($('input#chat-box').val());
       $('input#chat-box').val('');
       $('button#chat-smiley').focus();
     }

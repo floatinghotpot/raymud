@@ -4,11 +4,12 @@
   "description": "Web-based MUD game powered by nodejs & socket.io",
   "main": "index.js",
   "bin": {
-    "raymud": "./dist/raymud.js"
+    "raymud-server": "./dist/raymud_cli.js",
+    "raymud-logger": "./dist/logger_cli.js"
   },
   "scripts": {
-    "start": "node ./dist/raymud.js",
-    "debug": "node --debug ./dist/raymud.js",
+    "start": "node ./dist/raymud_cli.js",
+    "debug": "node --debug ./dist/raymud_cli.js",
     "clean": "rm -rf dist",
     "build": "babel ./src -d ./dist -s",
     "rebuild": "npm run clean && npm run build",
@@ -22,6 +23,7 @@
   "keywords": [
     "mud",
     "raymud",
+    "webmud",
     "mud.js"
   ],
   "author": "Raymond Xie",

@@ -68,7 +68,7 @@ function onCmdLinkClicked(e) {
 }
 
 function parseStr(str) {
-  str = str.replace('\n', '<br/>').replace(/<a cmd=/g, '<a href=\'#\' class=\'cmd\' cmd=');
+  str = str.replace(/\n/g, '<br/>').replace(/<a cmd=/g, '<a href=\'#\' class=\'cmd\' cmd=');
   console.log(str);
   return str;
 }
@@ -119,7 +119,7 @@ function me(args) {
 }
 
 client.on('hello', function(event, args){
-  vision(args.hello_msg + '\n版本号：' + args.version + '\n');
+  vision(args.hello_msg + '\n版本号：' + args.version);
 
   setTimeout(function(){
     var u = localStorage.getItem(saveUserId);

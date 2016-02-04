@@ -198,6 +198,7 @@ $(document).ready(function(){
     if(keycode === 13) {
       cmd($('input#chat-box').val());
       $('input#chat-box').val('');
+      $('button#chat-smiley').focus();
     }
   });
 

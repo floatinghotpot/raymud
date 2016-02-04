@@ -233,8 +233,9 @@ var CHAR = Class(OBJ, {
     if(env) {
       var room = env.nextRoom(dir);
       if(room) {
+        reply(0, '你来到'+room.short()+'。');
         this.move(room);
-        return reply(0, '你来到'+room.short()+'。');
+        return;
       }
     }
     return reply(404, '这个方向没有出口。');

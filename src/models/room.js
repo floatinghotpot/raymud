@@ -26,6 +26,24 @@ var ROOM = Class(OBJ, {
 
     this.Super('setup').apply(this, arguments);
   },
+
+  looksInside: function() {
+    var world = this._world;
+
+    var looks = this.Super('looksInside').apply(this, arguments);
+
+    var exits = looks.exits = {};
+    var e = this.query('exits');
+    if(e && typeof e === 'object') {
+      for(var dir in e) {
+        var key = this.absKey(e[dir]);
+        var room = world.rooms[key];
+        if(room) exits[dir] = room.short();
+      }
+    }
+
+    return looks;
+  },
 });
 
 exports = module.exports = ROOM;

@@ -139,7 +139,6 @@ var User = Class({
 
     if(this.world) {
       var worldkey = 'world:#' + this.world;
-      this.socket.join(worldkey + '#cast');
       pub.publish(worldkey, JSON.stringify({
         f: 'reconnect',
         uid: this.uid,
@@ -153,18 +152,24 @@ var User = Class({
   },
 
   onLogout: function() {
-    if(!this.world) return;
-    var worldkey = 'world:#' + this.world + '#cast';
-    this.socket.leave(worldkey);
-
+    var sub = this.server.sub;
     var pub = this.server.pub;
-    if(!pub) return;
-    pub.publish(worldkey, JSON.stringify({
-      f: 'exit',
-      uid: this.uid,
-      seq: 0,
-      args: 0,
-    }));
+
+    sub.unsubscribe('user:#' + this.uid);
+
+    var str = 'user (' + this.uid + ') logout';
+    console.log(str);
+    pub.publish('user:log', str);
+
+    if(this.world) {
+      var worldkey = 'world:#' + this.world;
+      pub.publish(worldkey, JSON.stringify({
+        f: 'exit',
+        uid: this.uid,
+        seq: 0,
+        args: 0,
+      }));
+    }
   },
 
   notify: function(event, args) {
@@ -266,7 +271,6 @@ var User = Class({
       reply(0, 'ok');
 
       user.world = worldId;
-      user.socket.join(worldkey + '#cast');
       pub.publish(worldkey, JSON.stringify({
         f: 'enter',
         uid: user.uid,

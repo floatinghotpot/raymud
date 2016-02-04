@@ -13,12 +13,6 @@ div#root, div#main {
   height: 100%;
 }
 
-div.pageview {
-  display: inline-block;
-  border: 1px solid silver;
-  position: fixed;
-}
-
 div#scene-page {
   width: 50%;
   height: 50%;
@@ -53,45 +47,76 @@ div#chat-page {
 
 div.titlebar {
   width: 100%;
-  padding: 5px;
-  border: 1px solid gray;
-  background-color: gray;
+  padding: 10px;
+  background-color: #444;
   color: white;
   text-align: center;
-  font-size: 18px;
+  font-size: 22px;
   top: 0;
-}
-
-div.content {
-  width: 100%;
 }
 
 div#navbar {
   display: none;
 }
 
+div.pageview {
+  display: inline-block;
+  border: 1px solid #ddd;
+  position: fixed;
+}
+
+div.content {
+  width: 100%;
+  padding: 5px;
+  overflow-y: scroll;
+  line-height: 150%;
+}
+
+div#chat-log {
+  width: 100%;
+  height: 80%;
+  padding: 5px;
+  line-height: 150%;
+}
+
 div#chat-input {
+  border-top: 1px solid #888;
   position: fixed;
   bottom: 0;
   width: 100%;
+  padding: 8px;
 }
 
-input#chat-input-box {
+input#chat-box {
   width: 100%;
-  padding: 10px;
-  margin: 0px;
+  padding: 5px;
+  margin: 5px;
   display: inline-block;
+  border: 0px;
+  border-bottom: 1px dotted #888;
 }
 
-button#chat-send {
-  width: 100px;
-  padding: 12px;
+button#chat-smiley {
   margin: 0px;
-  position: fixed;
-  right: 0;
+  padding: 2px;
+  color: #666;
+  border: 0px;
+  background-color: white;
+  position: relative;
+  float: left;
+  top: -50%;
+}
+
+i#icon-smiley {
+  margin: 0px;
+  padding: 0px;
 }
 
 @media screen and (max-width: 800px) {
+  body, input#chat-box {
+    font: 18px Helvetica, Arial;
+  }
+
   div#main {
     width: 100%;
     height: 95%;
@@ -104,19 +129,38 @@ button#chat-send {
     top: 0;
   }
 
+  div.pageview {
+    display: inline-block;
+    border: 0px;
+    position: fixed;
+  }
+
   div#navbar {
     display: block;
     position: fixed;
     bottom: 0;
     width: 100%;
-    height: 50px;
-    padding: 0px;
+    padding: 5px;
+    border-top: 1px solid #666;
+    background-color: #ddd;
   }
 
   button.navbtn {
     width: 20%;
-    height: 50px;
-    padding: 10px;
+    padding: 0px;
     margin: 0px;
+    border-radius: 1px;
+    border: 0px;
+    background-color: #ddd;
+    color: #666;
+  }
+
+  button.current {
+    color: #009900;
+  }
+
+  i.navicon {
+    padding: 0;
+    margin: 0;
   }
 }

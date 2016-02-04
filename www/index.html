@@ -1,20 +1,47 @@
 <!doctype html>
 <html>
 <head>
-  <meta charset='utf-8'>
-  <title>RayMud</title>
-  <link rel="stylesheet" href="css/main.css"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="msapplication-tap-highlight" content="no" />
+  <meta name="format-detection" content="telephone=no" />
+
+  <!-- to avoid the warning of content security policy -->
+  <meta http-equiv="Content-Security-Policy" content="default-src *; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'"/>
+
+<script>
+  // fix wp8 view port issue, see:
+  // https://github.com/floatinghotpot/cordova-admob-pro/issues/109
+  // https://coderwall.com/p/zk_2la/responsive-design-in-ie-10-on-windows-phone-8
+  // http://stackoverflow.com/questions/24007577/windows-phone-8-viewport-issue
+(function() {
+  if ("-ms-user-select" in document.documentElement.style && navigator.userAgent.match(/IEMobile\/10\.0/)) {
+    var msViewportStyle = document.createElement("style");
+    msViewportStyle.appendChild(
+      document.createTextNode("@-ms-viewport{width:auto!important}")
+    );
+    document.getElementsByTagName("head")[0].appendChild(msViewportStyle);
+  }
+})();
+</script>
   <script src="/socket.io/socket.io.js"></script>
   <script src="js/jquery-1.12.0.js"></script>
   <script src="js/jquery.cookie.js"></script>
   <script src="js/login-client.js"></script>
   <script src="js/main.js"></script>
+  <link rel="stylesheet" href="font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="css/main.css"/>
+  <title>RayMud</title>
 </head>
-<body>
+
+  <body>
   <div id='root'>
     <div id='main'>
       <div id='scene-page' class='pageview'>
-        <div class='titlebar' id='scene-title'>当前场景</div>
+        <div class='titlebar' id='scene-title'>场景</div>
         <div class='content' id='scene-content'></div>
       </div>
       <div id='vision-page' class='pageview'>
@@ -22,10 +49,12 @@
         <div class='content' id='vision-content'></div>
       </div>
       <div id='chat-page' class='pageview'>
-        <div class='titlebar' id='chat-title'>聊天</div>
-        <div id='chat-content'></div>
-        <div id='chat-input'>
-          <input type='text' id='chat-input-box'/><button id='chat-send'>发送</button>
+        <div class='titlebar' id='chat-title'>对话</div>
+        <div id='chat-content'>
+          <div id='chat-log'></div>
+          <div id='chat-input'>
+            <button id='chat-smiley'><i id='icon-smiley' class='fa fa-smile-o fa-3x'></i></button><input type='text' id='chat-box'/>
+          </div>
         </div>
       </div>
       <div id='bag-page' class='pageview'>
@@ -33,13 +62,13 @@
         <div class='content' id='bag-content'></div>
       </div>
       <div id='me-page' class='pageview'>
-        <div class='titlebar' id='me-title'>我的资料</div>
+        <div class='titlebar' id='me-title'>关于我</div>
         <div class='content' id='me-content'></div>
       </div>
       <div id='pop-root'></div>
     </div>
     <div id='navbar'>
-      <button class='navbtn' nav='scene-page'>场景</button><button class='navbtn' nav='vision-page'>动态</button><button class='navbtn' nav='chat-page'>聊天</button><button class='navbtn' nav='bag-page'>背包</button><button class='navbtn' nav='me-page'>我</button>
+      <button class='navbtn' id='scene'><i class='fa fa-picture-o fa-3x'></i><br/>场景</button><button class='navbtn' id='vision'><i class='fa fa-users fa-3x'></i><br/>情节</button><button class='navbtn' id='chat'><i class='fa fa-comments fa-3x'></i><br/>对话</button><button class='navbtn' id='bag'><i class='fa fa-th fa-3x'></i><br/>背包</button><button class='navbtn' id='me'><i class='fa fa-user fa-3x'></i><br/>我</button>
     </div>
   </div>
 </body>

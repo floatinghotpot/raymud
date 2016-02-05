@@ -15,7 +15,7 @@ var ROOM = Class(OBJ, {
     if(objects && typeof objects === 'object') {
       for(var key in objects) {
         var count = objects[key];
-        for(let i=0; i<count; i++) {
+        for(var i=0; i<count; i++) {
           var obj = world.cloneObject(key);
           if(obj) {
             obj.putInto(this);

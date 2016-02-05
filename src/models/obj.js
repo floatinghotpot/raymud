@@ -21,9 +21,12 @@ var OBJ = Class({
 
   // overridable
   // will be called when loadObject() or cloneObject()
-  onCreate: function() {},
+  onCreate: function() {
+    this.setup();
+  },
   // will be called when in destruct()
-  onDestroy: function() {},
+  onDestroy: function() {
+  },
 
   // ======================
   // F_DBASE
@@ -146,17 +149,19 @@ var OBJ = Class({
   inventory: function() {
     return this._objs;
   },
-  looks: function() {
+  looks: function(me) {
     return {
       type: this.constructor.name,
       short: this.short(),
       long: this.long(),
     };
   },
-  looksInside: function() {
+  looksInside: function(me) {
     var objs = {};
     for(var key in this._objs) {
-      objs[key] = this._objs[key].short();
+      var obj = this._objs[key];
+      if(obj === me) continue;
+      objs[key] = obj.short();
     }
     return {
       type: this.constructor.name,
@@ -169,20 +174,20 @@ var OBJ = Class({
   // ======================
   // actions
   addAction: function(key, action) {
-    if(typeof action === 'string' && action.indexOf('function') === 0) {
-      try {
-        action = eval(action);
-        this._actions[key] = action;
-      } catch(e) {
-        return;
-      }
-    }
     if(typeof action === 'function') {
       this._actions[key] = action;
+    } else if(typeof action === 'string') {
+      try {
+        this._actions[key] = new Function(action);
+      } catch(e) {
+        console.log(e);
+        return;
+      }
     } else {
-      this.world.log('Error: ' + this._key + '->' + 'addAction: ' + action);
+      this._world.log('Error: ' + this._key + '->' + 'addAction: ' + action);
     }
   },
+
   removeAction: function(key) {
     delete this._actions[key];
   },

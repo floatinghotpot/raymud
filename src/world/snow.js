@@ -25,7 +25,7 @@ var snowInnHall = {
 
 var snowSquare = {
   short: '广场中央',
-  long: '这里是雪亭镇广场的中央，一株巨大的<a cmd="look tree">老榕树</a>盘根错节地站在中央，一些孩童常常<a cmd="climb tree">爬</a>上这棵老榕树嬉戏，榕树下七横八竖地放着几张<a cmd="look bench">长凳</a>供人歇息聊天，树旁还有个水缸供路人取水解渴。',
+  long: '这里是雪亭镇广场的中央，一株巨大的<a cmd="look tree">老榕树</a>盘根错节地站在中央，一些孩童常常<a cmd="climb tree">爬</a>上这棵老榕树嬉戏。榕树下七横八竖地放着几张<a cmd="look bench">长凳</a>供人歇息聊天，树旁还有个水缸供路人取水解渴。',
   objects: {
     // 'item/pot': 1,
     // 'npc/gammer': 1,
@@ -43,13 +43,13 @@ var snowSquare = {
     // north: 'sqare_n',
   },
   actions: {
-    climb: 'function(me, args) { if(args !== "tree") return 0;  me.vision("vision","$N攀着榕树的树干爬了上去。\n", me); if(me.move("tree")) { me.vision("vision","$N从树下爬了上来。\n", me); } return 1; }',
+    climb: 'var me=arguments[0]; var args=arguments[1]; if(args !== "tree") return 0;  me.vision("$N攀着榕树的树干爬了上去。\\n", me); if(me.move("tree")) { me.vision("$N从树下爬了上来。\\n", me); } return 1;',
   },
 };
 
 var snowSquareTree = {
   short: '榕树上',
-  long: '你现在正在一株巨大的榕树上，茂密的枝叶搔得你有些发痒，前面一根粗大的树枝上有人放着一块垫子。',
+  long: '你现在正在一株巨大的榕树上，茂密的枝叶搔得你有些发痒。前面一根粗大的树枝上，有人放着一块垫子。',
   objects: {
     // 'npc/child': 1,
   },

@@ -27,7 +27,7 @@ var ROOM = Class(OBJ, {
     this.Super('setup').apply(this, arguments);
   },
 
-  looksInside: function() {
+  looksInside: function(me) {
     var world = this._world;
 
     var looks = this.Super('looksInside').apply(this, arguments);

@@ -121,8 +121,9 @@ var CHAR = Class(OBJ, {
   scene: function() {
     var env = this.environment();
     if(env) {
-      this.notify('scene', env.looksInside());
+      this.notify('scene', env.looksInside(this));
     }
+    this._target = env;
   },
 
   move: function(dest) {
@@ -130,7 +131,8 @@ var CHAR = Class(OBJ, {
     case 'object':
       break;
     case 'string':
-      dest = this._world.loadObject(this.absKey(dest));
+      if(dest[0] !== '/') dest = this.environment().absKey(dest);
+      dest = this._world.loadObject(dest);
       break;
     default:
       this.notifyFail('move: invalid destination, expected: object or string, got: ' + dest);
@@ -147,7 +149,7 @@ var CHAR = Class(OBJ, {
       this.scene();
     } else {
       if(typeof ob === 'string') ob = this._world.loadObject(this.absKey(ob));
-
+      this._target = ob;
       if(ob.instanceOf(CHAR)) {
         this.notify('look', ob.looks());
         if(this !== ob && ob.query('is_player')) ob.tell('vision', '$N正盯着你看，不知道打些什么主意。\n', this, ob);
@@ -157,12 +159,12 @@ var CHAR = Class(OBJ, {
     }
   },
 
-  vision: function(channel, msg, who, whom) {
+  vision: function(msg, who, whom) {
     var neighbors = this.environment().inventory();
     for(var key in neighbors) {
       var obj = neighbors[key];
       if(obj && obj.query('is_player')) {
-        obj.tell(channel, msg, who, whom);
+        obj.tell('vision', msg, who, whom);
       }
     }
   },
@@ -187,7 +189,7 @@ var CHAR = Class(OBJ, {
   },
 
   notifyFail: function(str) {
-    this.notify('feedback', str);
+    this.notify('fail', str);
   },
 
   chat: function(str) {
@@ -217,7 +219,7 @@ var CHAR = Class(OBJ, {
     if(!this._uid) return reply(500, 'no uid is found when save');
 
     // TODO:
-    return reply(0, 1);
+    return reply(0, 0);
   },
 
   load: function(uid, reply) {
@@ -257,6 +259,15 @@ var CHAR = Class(OBJ, {
       case 'go':
         this.go(params, reply);
         break;
+      default:
+        var target = this._target;
+        if(!target) target = this.environment();
+        if(target && typeof target._actions === 'object') {
+          var func = target._actions[cmd];
+          if(typeof func === 'function') {
+            func.call(target, this, params);
+          }
+        }
     }
   },
 

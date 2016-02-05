@@ -116,6 +116,10 @@ var WorldServer = Class({
     }, 1000);
   },
 
+  log: function(str) {
+    this.pub.publish('world:log', str);
+  },
+
   setup: function() {
     this.loadProto('/player', CHAR);
 
@@ -165,6 +169,10 @@ var WorldServer = Class({
 
     this.objects[roomKey] = obj;
     this.counts.objects ++;
+
+    obj.onCreate();
+
+    return obj;
   },
 
   loadObject: function(protoKey) {
@@ -389,7 +397,7 @@ var WorldServer = Class({
     if(!player) return reply(404, 'player not found: ' + req.uid);
 
     player.set('offline', 1);
-    player.vision('vision', '$N掉线了。\n', player);
+    player.vision('$N掉线了。\n', player);
   },
 
   onCharCmdreconnect: function(req, reply) {
@@ -397,7 +405,7 @@ var WorldServer = Class({
     if(!player) return reply(404, 'player not found: ' + req.uid);
 
     player.unset('offline', 1);
-    player.vision('vision', '$N重新连线了。\n', player);
+    player.vision('$N重新连线了。\n', player);
   },
 
   onCharCmdreload: function(req, reply) {

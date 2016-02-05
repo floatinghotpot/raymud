@@ -1,11 +1,15 @@
 var client = new LoginClient();
 
+var gameInfo = {};
+
 var saveUserId = 'saveUserId';
 var saveUserPasswd = 'saveUserPasswd';
 
+var curScene = {};
+
 function enterWorld(id) {
   client.rpc('enter', id, function(err, ret){
-    if(!err) echo('你连线进入虚拟世界。\n');
+    if(!err) echo('你穿越进入虚拟世界。\n');
   });
 }
 
@@ -40,8 +44,6 @@ function login(u, p) {
   });
 }
 
-var curScene = {};
-
 function runCmd(str) {
   if(str.indexOf('look ') === 0) {
     var what = str.split(' ')[1];
@@ -73,24 +75,28 @@ function parseStr(str) {
 }
 
 function title(str) {
-  document.title = '『我的武林』' + ' - ' + str;
+  document.title = '『武林新传』' + ' - ' + str;
   $('div#scene-title').html(str);
+  $('div#vision-title').html(str);
 }
 
 function echo(str) {
   var t = $('div#vision-content');
   t.html(t.html() + parseStr(str) + '<br/>');
+
   $('a.cmd').on('click', onCmdLinkClicked);
+
   setTimeout(function(){
     t.animate({ scrollTop: t.prop("scrollHeight") }, 500);
   }, 50);
 }
 
-function scene(args) {
-  curScene = args;
-
+function scene(str) {
   var t = $('div#scene-content');
-  t.html(JSON.stringify(args));
+  t.html(parseStr(str));
+
+  // also display it in vision log view
+  echo(str);
 }
 
 function chat(args) {
@@ -133,7 +139,7 @@ client.on('hello', function(event, args){
         if(err) {
           echo(err);
         } else {
-          echo(('自动创建了账号：') + ret.uid + '/' + ret.passwd);
+          echo(('您是第一次访问，自动创建账号：') + ret.uid + '/' + ret.passwd);
           login(ret.uid, ret.passwd);
         }
       });
@@ -156,6 +162,7 @@ var _dirs = {
 };
 
 client.on('scene', function(event, args){
+  curScene = args;
   title(args.short);
   
   var str = args.long + '\n';
@@ -181,8 +188,7 @@ client.on('scene', function(event, args){
     }
     str += (items.join('、')) + '。\n';
   }
-  echo(str);
-  scene(args);
+  scene(str);
 });
 
 client.on('look', function(event, args){
@@ -195,6 +201,10 @@ client.on('vision', function(event, args){
 });
 
 client.on('feedback', function(event, args){
+  echo(args);
+});
+
+client.on('fail', function(event, args){
   echo(args);
 });
 

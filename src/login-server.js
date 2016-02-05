@@ -262,7 +262,7 @@ var LoginServer = Class({
       if(typeof req !== 'object' || typeof req.f !== 'string') return reply(400, 'invalid rpc req');
 
       var funcName = 'onUserRpc' + req.f;
-      let method = server[funcName];
+      var method = server[funcName];
       if(typeof method === 'function') {
         method.call(server, sock, req, reply);
       } else {
@@ -354,7 +354,7 @@ var LoginServer = Class({
       if(userinfo.passwd !== args.passwd) return reply(403, 'invalid user id or password');
 
       // create user object
-      let user = server.users[uid];
+      var user = server.users[uid];
       if(!user) {
         user = new User(uid);
         server.users[uid] = user;
@@ -367,8 +367,8 @@ var LoginServer = Class({
       var pin = Math.floor((0.1 + Math.random()) * now);
 
       // link sock to user object
-      let isRelogin = false;
-      let sameSock = false;
+      var isRelogin = false;
+      var sameSock = false;
       if(user.socket) {
         isRelogin = true;
         if(user.socket.id === sock.id) {

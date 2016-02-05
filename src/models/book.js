@@ -39,7 +39,7 @@ var BOOK = Class(ITEM, {
       if(!content) {
         return player.notifyFail('这上面没有记载什么有用的内容。\n');
       }
-      let toLearn = 0;
+      var toLearn = 0;
       for(var k in content) {
         if(player.queryDeep('skill/'+k) < content[k]) toLearn++;
       }
@@ -61,17 +61,17 @@ var BOOK = Class(ITEM, {
     var content = this.query('content');
     if(!content) return 0;
 
-    let contentSize = 0;
+    var contentSize = 0;
     for(var i in content) {
       contentSize++;
     }
     if(!contentSize) return 0;
 
     // 使用读书识字的技能
-    let skill = player.queryDeep('skill/literate');
+    var skill = player.queryDeep('skill/literate');
 
     // 耗费精神 1-10 点
-    let cost = 1 + (9 - player.queryDeep('attribute/wis')/3);
+    var cost = 1 + (9 - player.queryDeep('attribute/wis')/3);
     if(cost < 1) cost = 1;
 
     var stat = player.query('stat');
@@ -83,7 +83,7 @@ var BOOK = Class(ITEM, {
     player.consumeStat('gin', cost);
     player.consumeStat('sen', cost);
 
-    let gain = 0;
+    var gain = 0;
     var point = player.queryAttr('int') / contentSize;
     for(var t in content) {
       var max = content[t];

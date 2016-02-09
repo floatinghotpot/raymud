@@ -148,7 +148,13 @@ var CHAR = Class(OBJ, {
     if(!ob) {
       this.scene();
     } else {
-      if(typeof ob === 'string') ob = this._world.loadObject(this.absKey(ob));
+      if(typeof ob === 'string') {
+        ob = this._world.loadObject(this.environment().absKey(ob));
+        if(!ob) {
+          this.notify('feedback', '这里没有这样东西。\n');
+          return;
+        }
+      }
       this._target = ob;
       if(ob.instanceOf(CHAR)) {
         this.notify('look', ob.looks());

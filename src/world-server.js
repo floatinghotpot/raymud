@@ -179,7 +179,10 @@ var WorldServer = Class({
     var obj = this.objects[protoKey];
     if(!obj) {
       var proto = this.protos[protoKey];
-      if(!proto) throw new Error('proto not found: ' + protoKey);
+      if(!proto) {
+        console.log('proto not found: ' + protoKey);
+        return null;
+      }
       if(!proto._copyId) proto._copyId = 0;
       if(!proto._copyCnt) proto._copyCnt = 0;
 
@@ -194,7 +197,10 @@ var WorldServer = Class({
 
   cloneObject: function(protoKey) {
     var proto = this.protos[protoKey];
-    if(!proto) throw new Error('proto not found: ' + protoKey);
+    if(!proto) {
+      console.log('proto not found: ' + protoKey);
+      return null;
+    }
     if(!proto._copyId) proto._copyId = 0;
     if(!proto._copyCnt) proto._copyCnt = 0;
 
@@ -354,6 +360,7 @@ var WorldServer = Class({
     var world = this;
     var uid = req.uid;
     var player = this.players[req.uid];
+    // console.log(player);
     if(player) {
       player.scene();
       reply(0, {});

@@ -19,8 +19,19 @@ var snowInnHall = {
   },
   exits: {
     // west: 'inn_kitchen',
+    east: 'square_w',
+  },
+};
+
+var snowSquareWest = {
+  short: '广场',
+  long: '这里是雪亭镇广场的西边，广场上铺着整齐的石板。往东可以看见广场中央的大榕树。一家小客栈坐落在西边不远处，客栈前的一串灯笼上写着「饮风客栈」四个大字。',
+  exits: {
+    west: 'inn_hall',
     east: 'square',
   },
+  'no_fight': 1,
+  outdoors: 'snow',
 };
 
 var snowSquare = {
@@ -36,10 +47,9 @@ var snowSquare = {
     'bench': '十分普通常见的长凳，如果你累了，不必客气，尽管坐下来休息。',
   },
   exits: {
-    west: 'inn_hall',
-    // west: 'sqare_w',
+    west: 'square_w',
     // south: 'sqare_s',
-    // east: 'sqare_e',
+    east: 'square_e',
     // north: 'sqare_n',
   },
   actions: {
@@ -58,12 +68,131 @@ var snowSquareTree = {
   },
 };
 
+var snowSquareEast = {
+  short: '广场',
+  long: '这里是雪亭镇广场东边。往东是一条僻静的巷子。西边是一株高大的榕树。南边是一家打铁铺子，不过店门不在这一边。',
+  exits: {
+    west: 'square',
+    east: 'epath',
+  },
+};
+
+var snowEPath = {
+  short: '僻静小巷',
+  long: '这里是条僻静的小巷子。往西不远处通往雪亭镇的广场。小巷的北面是一些瓦屋，围绕着高高的<a cmd=\'look wall\'>围墙</a>，看来是有钱人的屋子。南边有家小药铺，门口挂了好些晒干的药草。小巷往东是个转角。',
+  exits: {
+    wast: 'square_e',
+    east: 'lane1',
+    //south: 'herb_shop',
+  },
+  detail: {
+    'wall': '这里的围墙看起来相当高。不过如果跳起来的话，勉强可以够得着，貌似还可以<a cmd=\'climb wall\'>爬</a>上去。',
+  },
+  actions: {
+    climb: 'var me=arguments[0]; var args=arguments[1]; if(args !== "wall") return 0;  me.vision("$N用手攀上围墙，蹬了几下，翻了过去。\\n", me); if(me.move("kitchen")) { me.vision("$N从围墙的另一头爬了过来。\\n", me); } return 1;',
+  },
+};
+
+var snowKitchen = {
+  short: '厨房',
+  long: '你现在正在一户有钱人家的厨房里。不过和你想象中的有钱人家厨房好像不太一样，并没有堆满了鸡鸭鱼肉跟山珍海味，想来有钱人也是省吃俭用才能有钱的。厨房的门在你的南边，不过锁住了。东边则是你进来的<a cmd=\'look wall\'>围墙</a>。',
+  detail: {
+    'wall': '围墙相当高。不过你既然可以翻墙进来，自然也可以再<a cmd=\'climb wall\'>翻墙</a>回去。',
+  },
+  actions: {
+    climb: 'var me=arguments[0]; var args=arguments[1]; if(args !== "wall") return 0;  me.vision("$N用手攀上围墙，蹬了几下，翻了过去。\\n", me); if(me.move("epath")) { me.vision("$N从围墙的另一头爬了过来。\\n", me); } return 1;',
+  },
+};
+
+var snowLane1 = {
+  short: '僻静小巷',
+  long: '这里是条僻静小巷的转角处。小巷往北可以通往溪边，从这里就可以听到溪流哗哗的声音。东边是一栋破旧的大宅院，门口的一块破匾写着「长乐侯府」，不过里面已经是断壁残垣了。小巷南边有一座小土地庙。',
+  outdoors: 'snow',
+  exits: {
+    north: 'lane2',
+    west: 'epath',
+    east: 'ruin1',
+  },
+};
+
+var snowLane2 = {
+  short: '溪边小路',
+  long: '你现在来到一处巷子的入口。往北通往一条溪边的小路。西边是一栋<a cmd=\'look house\'>大瓦房</a>，大门紧锁着。东边有一家<a cmd=\'look mull\'>磨坊</a>，磨坊屋旁友一个<a cmd=\'look wheel\'>水车</a>，正轱辘轱辘地转着。往南通往巷子里的一个转角。',
+  detail: {
+    'house': '一间高大的瓦房。在雪亭镇这样的山间小镇而言，这样的屋子并不多见，可算得上有钱人家。',
+    'wheel': '这家水车是磨坊动力的来源。平常溪水丰沛的季节就直接用水力，一到秋冬枯水季节，就得雇人用脚踩。',
+    'mill': '一家用水车碾面粉的磨坊。磨坊的门是关着的，不过从里面传来的声音判断，应该有工人正在里面工作。',
+  },
+  outdoors: 'snow',
+  exits: {
+    south: 'lane1',
+    north: 'npath3',
+  },
+};
+
+var snowMill = {
+  short: '磨坊',
+  long: '这里是一间以磨面粉为业的磨坊。屋子里一大半的空间被一架水车占据。水车转动横过屋梁的木轴，木轴推动几个绞盘转动屋子中央的石磨。屋子的另一角，堆放着一些空的麻袋。',
+  exits: {
+    out: 'lane2',
+  },
+  objects: {
+    // 'npc/miller': 1,
+  },
+};
+
+var snowNPath3 = {
+  short: '溪边小路',
+  long: '你现在来到溪流边上的小路。溪水流过布满石块的河床，发出轰轰的声音。一条木桥跨过溪流往东通往镇外的小路，沿着溪边往南不远处则可以望见一间磨坊。北边一条小路可以下到溪谷中。',
+  outdoors: 'snow',
+  exits: {
+    north: 'river1',
+    northwest: 'npath2',
+    //east: 'ebridge',
+    south: 'lane2',
+  },
+};
+
+var snowNPath2 = {
+  short: '溪边小路',
+  long: '这里是一条溪边的小路。从这里可以望见北边的山间一道瀑布从崖上垂下，穿过山坡上的一片树林，以及不远处的草地，往你的东南边流过，溪水冲击着溪床的岩石，发出轰轰的声音。往西沿着小路，可以回到雪亭镇的大街。小路向东南可以通往溪边。',
+  outdoors: 'snow',
+  exits: {
+    //north: '/month/a1',
+    southeast: 'npath3',
+    west: 'npath1',
+  },
+  objects: {
+    //'npc/woman': 1,
+  },
+};
+
+var snowNPath1 = {
+  short: '小路',
+  long: '这里是一条黄土小路。往西可以回到雪亭镇的主要街道。北边是一片草地，草地尽头则是一片树林。往东尼可以听到淙淙的水声，不远处可以望见一条山溪。',
+  outdoors: 'snow',
+  exits: {
+    east: 'npath2',
+    //west: 'nstreet2',
+  },
+};
+
 exports = module.exports = {
   area: '/snow',
   rooms: {
     'inn_hall': snowInnHall,
+    'square_w': snowSquareWest,
     'square': snowSquare,
     'tree': snowSquareTree,
+    'square_e': snowSquareEast,
+    'epath': snowEPath,
+    'kitchen': snowKitchen,
+    'lane1': snowLane1,
+    'lane2': snowLane2,
+    'mill': snowMill,
+    'npath3': snowNPath3,
+    'npath2': snowNPath2,
+    'npath1': snowNPath1,
   },
   objects: {
     // 'npc/inn_keeper': _inn_keeper,

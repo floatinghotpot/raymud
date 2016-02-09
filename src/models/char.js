@@ -3,6 +3,20 @@
 var Class = require('mixin-pro').createClass;
 var OBJ = require('./obj.js');
 
+var _dirs = {
+  east: '东',
+  west: '西',
+  south: '南',
+  north: '北',
+  'southeast': '东南',
+  'northeast': '东北',
+  'southwest': '西南',
+  'northwest': '西北',
+  'up': '上',
+  'down': '下',
+  'out': '外面',
+};
+
 var bodyDescMale = [
   ['瘦小', '瘦弱', '瘦长'],
   ['矮小', '中等', '高大'],
@@ -242,6 +256,7 @@ var CHAR = Class(OBJ, {
     if(env) {
       var room = env.nextRoom(dir);
       if(room) {
+        this.vision('$N向'+ (_dirs[dir] || dir) +'离开。', this);
         reply(0, '你来到'+room.short()+'。');
         this.move(room);
         return this.vision('$N走了过来。', this);
@@ -254,6 +269,7 @@ var CHAR = Class(OBJ, {
 
   command: function(str, reply) {
     if(!reply) reply = this.dummyReply;
+    if(!str) return reply(400, 'empty command, ignored.');
 
     var words = str.split(' ');
     var cmd = words.shift();

@@ -7,6 +7,10 @@ var saveUserPasswd = 'saveUserPasswd';
 
 var curScene = {};
 
+$.cookie('lang', 'zh');
+hotjs.i18n.setLang('zh');
+hotjs.i18n.translate();
+
 function enterWorld(id) {
   client.rpc('enter', id, function(err, ret){
     if(!err) echo('你穿越进入虚拟世界。\n');
@@ -69,6 +73,7 @@ function onCmdLinkClicked(e) {
 }
 
 function parseStr(str) {
+  if(!str) return;
   str = str.replace(/\n/g, '<br/>').replace(/<a cmd=/g, '<a href=\'#\' class=\'cmd\' cmd=');
   console.log(str);
   return str;
@@ -123,6 +128,203 @@ function me(args) {
   t.html(JSON.stringify(args));
 }
 
+function parseReply(err, ret) {
+  if(err) echo(ret);
+  else if(ret.cmds) updateCmds('reply', ret.cmds);
+}
+
+function parseSignUpReply(err,ret){
+  parseReply(err,ret);
+  if(! err) {
+    echo('帐号已创建：' + ret.uid + '/' + ret.passwd);
+    login(ret.uid, ret.passwd);
+  }
+}
+
+function onBtnClicked(e) {
+  var method = $(this).attr('id');
+  switch(method) {
+  case 'fastsignup':
+    client.rpc(method, $(this).attr('arg'), parseSignUpReply);
+    break;
+  default:
+    client.rpc(method, $(this).attr('arg'), parseReply);
+  }
+}
+
+function onInputBtnClicked(e){
+  var method = $(this).attr('id');
+  client.rpc(method, $('input#'+method).val(), parseReply);
+  $('input#'+method).val('');
+}
+
+function onInputBoxEnter(e) {
+  if(e.which == 13) onInputBtnClicked.call(this, e);
+}
+
+function onDialogBtnClicked(e) {
+  var method = $(this).attr('id');
+  var dlg = $('div#'+method);
+  var x = ($(window).width() - dlg.width()) / 2;
+  var y = ($(window).height() - dlg.height()) / 2;
+  dlg.show();
+  dlg.css({
+    position:'absolute',
+    left: x + 'px',
+    top: y + 'px',
+  });
+
+  $('div#cmds').hide();
+}
+
+function onDialogXClicked(e) {
+  var method = $(this).attr('X');
+  $('div#'+method).hide();
+  $('div#cmds').show();
+}
+
+function onDialogOKClicked(e) {
+  var method = $(this).attr('OK');
+  var args = {};
+  $('input.' + method).each(function(i, v){
+    var input = $(this);
+    args[ input.attr('id') ] = input.val();
+  });
+  switch(method) {
+  case 'signup':
+    client.rpc(method, args, parseSignUpReply);
+    break;
+  default:
+    client.rpc(method, args, parseReply);
+  }
+}
+
+function updateCmds(event, cmds){
+  var v, div, btn, words, label, input;
+  for(var k in cmds) {
+    v = cmds[ k ];
+    if(v === null) {
+      $('div#'+k).remove();
+      $('button#'+k).remove();
+
+    } else if(v === true) {
+      btn = $('<button>').text(_T(k)).attr('id', k).attr('arg', 0).addClass('cmd');
+      $('#cmds').append(btn);
+      btn.on('click', onBtnClicked);
+
+    } else if(typeof v === 'string') {
+      div = $('<div>').attr('id',k).addClass('cmd');
+      $('#cmds').append(div);
+      input = $('<input>').attr('id', k).addClass('cmd');
+      words = v.split(',');
+      switch(words[0]) {
+      case 'range':
+        input.attr('type', 'range');
+        if(words[1]) {
+          var min = parseInt(words[1]);
+          input.attr('min', min).val(min);
+        }
+        if(words[2]) input.attr('max', parseInt(words[2]));
+        break;
+      case 'number':
+        input.attr('type', 'number').attr('size',5);
+        if(words[1]) input.attr('min', parseInt(words[1]));
+        if(words[2]) input.attr('max', parseInt(words[2]));
+        break;
+      case 'password':
+        input.attr('type', 'password').attr('size',40);
+        break;
+      //case 'text':
+      default:
+        input.attr('type', 'text').attr('size',40);
+        break;
+      }
+      div.append(input);
+      btn = $('<button>').text(_T(k)).attr('id', k).addClass('cmd');
+      div.append(btn);
+      btn.on('click', onInputBtnClicked);
+      input.keydown(onInputBoxEnter);
+
+    } else if(Array.isArray(v)) {
+      div = $('<div>').attr('id',k).addClass('cmd');
+      $('#cmds').append(div);
+      for(var i=0; i<v.length; i++) {
+        var arg = v[i];
+        var t_arg = (typeof arg === 'string') ? _T(arg) : arg;
+        btn = $('<button>').text(_T(k)+' '+ t_arg).attr('id', k).attr('arg', arg).addClass('cmd');
+        div.append(btn);
+        btn.on('click', onBtnClicked);
+      }
+
+    } else if( typeof v === 'object' ) {
+      btn = $('<button>').text(_T(k)).attr('id', k).addClass('cmd');
+      $('#cmds').append(btn);
+
+      var dlg = $('<div>').attr('id',k).addClass('dialog');
+      $('body').append(dlg);
+      dlg.hide();
+
+      var dlgheader = $('<div>').addClass('dlgheader');
+      dlg.append(dlgheader);
+      dlgheader.append($('<span>').text(_T(k)));
+      var X = $('<button>').text('X').attr('X', k).addClass('cmd');
+      dlgheader.append(X);
+      var dlgbody = $('<div>').addClass('dlgbody');
+      dlg.append(dlgbody);
+      for(var j in v) {
+        label = $('<div>').addClass('label');
+        label.append($('<label>').attr('for', j).text(_T(j)+':').addClass('cmd'));
+        input = $('<input>').attr('id', j).addClass(k).addClass('cmd');
+
+        words = v[j].split(',');
+        switch(words[0]) {
+        case 'range':
+          input.attr('type', 'range');
+          if(words[1]) input.attr('min', parseInt(words[1], 10));
+          if(words[2]) input.attr('max', parseInt(words[2], 10));
+          break;
+        case 'number':
+          input.attr('type', 'number').attr('size',5);
+          if(words[1]) input.attr('min', parseInt(words[1], 10));
+          if(words[2]) input.attr('max', parseInt(words[2], 10));
+          break;
+        case 'password':
+          input.attr('type', 'password').attr('size',40);
+          break;
+        //case 'text':
+        default:
+          input.attr('type', 'text').attr('size',40);
+          break;
+        }
+
+        switch(j) { // auto fill if we remember uid & passwd
+        case 'uid':
+          var u = localStorage.getItem(saveUserId);
+          if(u) input.val(u);
+          break;
+        case 'passwd':
+          var p = localStorage.getItem(saveUserPasswd);
+          if(p) input.val(p);
+          break;
+        }
+
+        dlgbody.append(label).append(input).append('<br/>');
+      }
+      var dlgfooter = $('<div>').addClass('dlgfooter');
+      dlg.append(dlgfooter);
+      var OK = $('<button>').text('OK').attr('OK', k).addClass('cmd');
+      dlgfooter.append(OK);
+
+      btn.on('click', onDialogBtnClicked);
+      OK.on('click', onDialogOKClicked);
+      X.on('click', onDialogXClicked);
+
+    } else {
+
+    }
+  }
+}
+
 client.on('hello', function(event, args){
   echo(args.hello_msg + '\n版本号：' + args.version +'\n');
 
@@ -146,6 +348,8 @@ client.on('hello', function(event, args){
     }
   }, 200);
 });
+
+client.on('prompt', updateCmds);
 
 var _dirs = {
   east: '东',

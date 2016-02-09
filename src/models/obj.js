@@ -134,6 +134,8 @@ var OBJ = Class({
     return path.normalize(this._key + '/../' + key);
   },
   putInto: function(env) {
+    if(this._env) this.removeFrom(this._env);
+
     var objs = env._objs;
     objs[this._key] = this;
     this._env = env;
@@ -161,7 +163,7 @@ var OBJ = Class({
     for(var key in this._objs) {
       var obj = this._objs[key];
       if(obj === me) continue;
-      objs[key] = obj.short();
+      objs[key] = obj.short() + '('+ obj._key +')';
     }
     return {
       type: this.constructor.name,

@@ -226,28 +226,26 @@ var LoginServer = Class({
       'client_req': this.conf.server.client_req,
     });
 
-    sock.on('hello', function(){
-      sock.emit('notify', {
-        uid: null,
-        e: 'prompt',
-        args: {
-          fastsignup: true,
-          signup: {
-            uid: 'string',
-            passwd: 'string',
-            name: 'string',
-            email: 'email',
-            phone: 'string',
-            uuid: 'string',
-          },
-          login: {
-            uid: 'string',
-            passwd: 'string',
-          },
+/*    sock.emit('notify', {
+      uid: null,
+      e: 'prompt',
+      args: {
+        fastsignup: true,
+        signup: {
+          uid: 'string',
+          passwd: 'string',
+          name: 'string',
+          //email: 'email',
+          //phone: 'string',
+          //uuid: 'string',
         },
-      });
+        login: {
+          uid: 'string',
+          passwd: 'string',
+        },
+      },
     });
-
+*/
     sock.on('rpc', function(req){ // remote call
       // console.log(req);
       // common callback to send return message for RPC call
@@ -394,7 +392,7 @@ var LoginServer = Class({
           fastsignup: null,
           signup: null,
           login: null,
-          logout: true,
+          // logout: true,
         },
       });
 

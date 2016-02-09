@@ -24,7 +24,7 @@ var snowInnHall = {
 };
 
 var snowSquareWest = {
-  short: '广场',
+  short: '广场西',
   long: '这里是雪亭镇广场的西边，广场上铺着整齐的石板。往东可以看见广场中央的大榕树。一家小客栈坐落在西边不远处，客栈前的一串灯笼上写着「饮风客栈」四个大字。',
   exits: {
     west: 'inn_hall',
@@ -69,7 +69,7 @@ var snowSquareTree = {
 };
 
 var snowSquareEast = {
-  short: '广场',
+  short: '广场东',
   long: '这里是雪亭镇广场东边。往东是一条僻静的巷子。西边是一株高大的榕树。南边是一家打铁铺子，不过店门不在这一边。',
   exits: {
     west: 'square',

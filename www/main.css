@@ -55,6 +55,12 @@ div.titlebar {
   top: 0;
 }
 
+div#cmds {
+  width: 100%;
+  position: fixed;
+  bottom: 0;
+}
+
 div#navbar {
   display: none;
 }
@@ -119,6 +125,58 @@ a.cmd {
   padding: 1px 3px;
   margin: 1px 3px;
   background-color: #eee;
+}
+
+div.dialog {
+  display: inline-block;
+  padding: 2px;
+  border: 1px solid gray;
+  vertical-align: top;
+  background: silver;
+  color: black;
+}
+
+div.dlgheader {
+  text-align: right;
+  background: #444;
+  color: white;
+  font-size: 20px;
+}
+
+div.dlgbody {
+  padding: 10px;
+}
+
+div.dlgfooter {
+  text-align: right;
+}
+
+div.cmd {
+  display: inline-block;
+}
+
+button.cmd {
+  background: rgb(130, 224, 255);
+  border: 1px solid black;
+  padding: 10px;
+  margin: 3px;
+  border-radius: 10px;
+}
+
+div.label {
+  width: 100px;
+  display: inline-block;
+}
+
+label.cmd {
+  width: 100px;
+  padding: 5px;
+  margin: 3px;
+}
+
+input.cmd {
+  padding: 5px;
+  margin: 3px;
 }
 
 @media screen and (max-width: 800px) {

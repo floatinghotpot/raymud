@@ -169,6 +169,7 @@ var CHAR = Class(OBJ, {
     var neighbors = this.environment().inventory();
     for(var key in neighbors) {
       var obj = neighbors[key];
+      if(obj === this) continue;
       if(obj && obj.query('is_player')) {
         obj.tell('vision', msg, who, whom);
       }
@@ -243,7 +244,7 @@ var CHAR = Class(OBJ, {
       if(room) {
         reply(0, '你来到'+room.short()+'。');
         this.move(room);
-        return;
+        return this.vision('$N走了过来。', this);
       }
     }
     return reply(404, '这个方向没有出口。');

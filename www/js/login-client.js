@@ -1,4 +1,5 @@
 (function(){
+
 function Client(socket) {
   this.reset();
 };
@@ -127,9 +128,10 @@ Client.prototype = {
   },
 };
 
-  if(typeof module === 'object' && typeof module.exports === 'object')
-    module.exports = Client;
+if(typeof module === 'object' && typeof module.exports === 'object')
+  module.exports = Client;
 
-  if(window && typeof window === 'object')
-    window.LoginClient = Client;
+if(window && typeof window === 'object')
+  window.LoginClient = Client;
+
 })();

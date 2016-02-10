@@ -323,6 +323,8 @@ function updateCmds(event, cmds){
 
     }
   }
+
+  if(_.size(cmds) === 1 && btn) btn.trigger('click');
 }
 
 client.on('hello', function(event, args){

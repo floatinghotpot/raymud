@@ -522,7 +522,6 @@ exports = module.exports = {
     'nstreet1': snowNStreet1,
     'nstreet2': snowNStreet2,
     'ngate': snowNGate,
-    'sstreet1': snowSStreet1,
     'wstreet1': snowWStreet1,
     'wstreet2': snowWStreet2,
     'school': snowSchool,

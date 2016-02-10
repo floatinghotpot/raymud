@@ -225,7 +225,7 @@ var LoginServer = Class({
       version: this.conf.server.version,
       'client_req': this.conf.server.client_req,
     });
-
+/*
     sock.emit('notify', {
       uid: null,
       e: 'prompt',
@@ -245,7 +245,7 @@ var LoginServer = Class({
         },
       },
     });
-
+*/
     sock.on('rpc', function(req){ // remote call
       // console.log(req);
       // common callback to send return message for RPC call

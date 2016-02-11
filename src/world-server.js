@@ -343,16 +343,14 @@ var WorldServer = Class({
       var func = this['onCharCmd' + req.f];
       if(typeof func === 'function') func.call(this, req, reply);
       break;
-    case 'cmd':
+    default:
       var player = this.players[req.uid];
       if(player) {
-        player.onCharCmd(req, reply);
+        player.onCharRpc(req, reply);
       } else {
         reply(404, 'player not found in world: ' + req.uid);
       }
       break;
-    default:
-      reply(400, 'unknown message: ' + req.f);
     }
   },
 
@@ -363,7 +361,7 @@ var WorldServer = Class({
     // console.log(player);
     if(player) {
       player.scene();
-      reply(0, {});
+      player.onEnterWorld(req, reply);
     } else {
       player = this.cloneObject('/player');
       if(player) {
@@ -382,7 +380,7 @@ var WorldServer = Class({
 
           var startRoom = player.query('last_room') || conf.entries[ Math.floor(Math.random() * conf.entries.length) ];
           player.move(startRoom);
-          reply(0, {});
+          player.onEnterWorld(req, reply);
         });
       }
     }

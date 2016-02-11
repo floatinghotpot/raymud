@@ -225,27 +225,30 @@ var LoginServer = Class({
       version: this.conf.server.version,
       'client_req': this.conf.server.client_req,
     });
-/*
+
     sock.emit('notify', {
       uid: null,
       e: 'prompt',
       args: {
-//        fastsignup: true,
-//        signup: {
-//          uid: 'string',
-//          passwd: 'string',
-//          name: 'string',
-//          email: 'email',
-//          phone: 'string',
-//          uuid: 'string',
-//        },
-        login: {
-          uid: 'string',
-          passwd: 'string',
+        tips: 'please login, or signup',
+        cmds: {
+          login: {
+            uid: 'string',
+            passwd: 'string',
+          },
+          signup: {
+            uid: 'string',
+            passwd: 'string',
+            name: 'string',
+            //email: 'email',
+            //phone: 'string',
+            //uuid: 'string',
+          },
+          fastsignup: true,
         },
       },
     });
-*/
+
     sock.on('rpc', function(req){ // remote call
       // console.log(req);
       // common callback to send return message for RPC call
@@ -272,7 +275,6 @@ var LoginServer = Class({
           method.call(user, req, reply);
         } else if(user.world) {
           var worldkey = 'world:#' + user.world;
-          req.f = 'cmd';
           server.pub.publish(worldkey, JSON.stringify(req));
         } else {
           return reply(404, 'user rpc method not defined: ' + funcName);

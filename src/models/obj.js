@@ -163,7 +163,7 @@ var OBJ = Class({
     for(var key in this._objs) {
       var obj = this._objs[key];
       if(obj === me) continue;
-      objs[key] = obj.short() + '('+ obj._key +')';
+      objs[key] = obj.short();
     }
     return {
       type: this.constructor.name,

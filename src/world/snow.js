@@ -34,7 +34,7 @@ var snowInnKitchen = {
     south: 'inn_hall',
   },
   actions: {
-    climb: 'var me=arguments[0]; var args=arguments[1]; if(args !== "owen") return 0;  me.vision("$N一矮身，从大灶的灶口钻了进去。\\n", me); if(me.move("fireplace")) { me.vision("$N从外面钻了进来，跟你挤成一团。\\n", me); } return 1;',
+    climb: 'var me=arguments[0]; var args=arguments[1]; if(args !== "owen") return 0;  me.vision("$N一矮身，从大灶的灶口钻了进去。\\n", me); if(me.move("fireplace")) { me.visionOther("$N从外面钻了进来，跟你挤成一团。\\n", me); } return 1;',
   },
 };
 
@@ -80,7 +80,7 @@ var snowSquare = {
     north: 'square_n',
   },
   actions: {
-    climb: 'var me=arguments[0]; var args=arguments[1]; if(args !== "tree") return 0;  me.vision("$N攀着榕树的树干爬了上去。\\n", me); if(me.move("tree")) { me.vision("$N从树下爬了上来。\\n", me); } return 1;',
+    climb: 'var me=arguments[0]; var args=arguments[1]; if(args !== "tree") return 0;  me.vision("$N攀着榕树的树干爬了上去。\\n", me); if(me.move("tree")) { me.visionOther("$N从树下爬了上来。\\n", me); } return 1;',
   },
 };
 
@@ -153,7 +153,7 @@ var snowEPath = {
     'wall': '这里的围墙看起来相当高。不过如果跳起来的话，勉强可以够得着，貌似还可以<a cmd=\'climb wall\'>爬</a>上去。',
   },
   actions: {
-    climb: 'var me=arguments[0]; var args=arguments[1]; if(args !== "wall") return 0;  me.vision("$N用手攀上围墙，蹬了几下，翻了过去。\\n", me); if(me.move("kitchen")) { me.vision("$N从围墙的另一头爬了过来。\\n", me); } return 1;',
+    climb: 'var me=arguments[0]; var args=arguments[1]; if(args !== "wall") return 0;  me.vision("$N用手攀上围墙，蹬了几下，翻了过去。\\n", me); if(me.move("kitchen")) { me.visionOther("$N从围墙的另一头爬了过来。\\n", me); } return 1;',
   },
 };
 
@@ -175,7 +175,7 @@ var snowKitchen = {
     'wall': '围墙相当高。不过你既然可以翻墙进来，自然也可以再<a cmd=\'climb wall\'>翻墙</a>回去。',
   },
   actions: {
-    climb: 'var me=arguments[0]; var args=arguments[1]; if(args !== "wall") return 0;  me.vision("$N用手攀上围墙，蹬了几下，翻了过去。\\n", me); if(me.move("epath")) { me.vision("$N从围墙的另一头爬了过来。\\n", me); } return 1;',
+    climb: 'var me=arguments[0]; var args=arguments[1]; if(args !== "wall") return 0;  me.vision("$N用手攀上围墙，蹬了几下，翻了过去。\\n", me); if(me.move("epath")) { me.visionOther("$N从围墙的另一头爬了过来。\\n", me); } return 1;',
   },
 };
 
@@ -198,7 +198,7 @@ var snowRuin1 = {
     'pole': '从梁柱焦黑的痕迹来看，这座大宅的主人大概是因为火灾的关系才离开的吧。貌似沿着这个梁柱，可以<a cmd=\'climb pole\'>爬</a>到里面去。',
   },
   actions: {
-    climb: 'var me=arguments[0]; var args=arguments[1]; if(args !== "pole") return 0;  me.vision("$N小心翼翼地爬过坍塌的梁柱进入大厅。\\n", me); if(me.move("ruin2")) { me.vision("$N从坍塌梁柱的另一头爬了过来。\\n", me); } return 1;',
+    climb: 'var me=arguments[0]; var args=arguments[1]; if(args !== "pole") return 0;  me.vision("$N小心翼翼地爬过坍塌的梁柱进入大厅。\\n", me); if(me.move("ruin2")) { me.visionOther("$N从坍塌梁柱的另一头爬了过来。\\n", me); } return 1;',
     search: 'var me=arguments[0]; var args=arguments[1]; if(args !== "grass") return 0;  if(this.flag) me.vision("$N在杂草里找来找去，但是什么也没有找到。\\n", me); return 1; this.flag=1; var ob = this._world.cloneObject("/snow/item/hairpin"); ob.move(me); me.vision("$N在草丛里找来找去，结果发现一支发簪！\\n", me); return 1;',
   },
   exits: {
@@ -215,7 +215,7 @@ var snowRuin2 = {
     'gap': '从缺口往外望去，只见大宅的其他部分都已经成为瓦砾堆了。如果你想过去，勉强可以从缺口爬出去。',
   },
   actions: {
-    climb: 'var me=arguments[0]; var args=arguments[1]; if(args !== "pole") return 0;  me.vision("$N爬过倒塌的梁柱，往大宅的前院离去。\\n", me); if(me.move("ruin1")) { me.vision("$N从坍塌梁柱的另一头爬了出来。\\n", me); } return 1;',
+    climb: 'var me=arguments[0]; var args=arguments[1]; if(args !== "pole") return 0;  me.vision("$N爬过倒塌的梁柱，往大宅的前院离去。\\n", me); if(me.move("ruin1")) { me.visionOther("$N从坍塌梁柱的另一头爬了出来。\\n", me); } return 1;',
   },
   exits: {
     north: 'riverbank',

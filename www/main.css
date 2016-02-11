@@ -55,12 +55,6 @@ div.titlebar {
   top: 0;
 }
 
-div#cmds {
-  width: 100%;
-  position: fixed;
-  bottom: 0;
-}
-
 div#navbar {
   display: none;
 }
@@ -137,7 +131,8 @@ div.dialog {
 }
 
 div.dlgheader {
-  text-align: right;
+  text-align: center;
+  padding: 5px;
   background: #444;
   color: white;
   font-size: 20px;
@@ -149,6 +144,7 @@ div.dlgbody {
 
 div.dlgfooter {
   text-align: right;
+  padding: 5px;
 }
 
 div.cmd {

@@ -183,6 +183,16 @@ var CHAR = Class(OBJ, {
     var neighbors = this.environment().inventory();
     for(var key in neighbors) {
       var obj = neighbors[key];
+      if(obj && obj.query('is_player')) {
+        obj.tell('vision', msg, who, whom);
+      }
+    }
+  },
+
+  visionOther: function(msg, who, whom) {
+    var neighbors = this.environment().inventory();
+    for(var key in neighbors) {
+      var obj = neighbors[key];
       if(obj === this) continue;
       if(obj && obj.query('is_player')) {
         obj.tell('vision', msg, who, whom);
@@ -256,10 +266,10 @@ var CHAR = Class(OBJ, {
     if(env) {
       var room = env.nextRoom(dir);
       if(room) {
-        this.vision('$N向'+ (_dirs[dir] || dir) +'离开。', this);
+        this.visionOther('$N向'+ (_dirs[dir] || dir) +'离开。', this);
         reply(0, '你来到'+room.short()+'。');
         this.move(room);
-        return this.vision('$N走了过来。', this);
+        return this.visionOther('$N走了过来。', this);
       }
     }
     return reply(404, '这个方向没有出口。');
@@ -289,14 +299,50 @@ var CHAR = Class(OBJ, {
           var func = target._actions[cmd];
           if(typeof func === 'function') {
             func.call(target, this, params);
+          } else {
+            reply(400, 'unknown command: ' + str);
           }
         }
     }
   },
 
-  onCharCmd: function(req, reply) {
+  onEnterWorld: function() {
+    if(!this.query('gender')) {
+      this.notify('prompt', {
+        tips: 'please set gender',
+        cmds: {
+          setgender: ['male', 'female'],
+        },
+      });
+    }
+  },
+
+  onCharRpc: function(req, reply) {
     // TODO:
-    this.command(req.args, reply);
+    console.log(req.f, req.args);
+    switch(req.f) {
+    case 'cmd':
+      this.command(req.args, reply);
+      break;
+    case 'setgender':
+      this.set('gender', req.args);
+      reply(0, 'ok');
+      if(!this.query('name')) {
+        this.notify('prompt', {
+          tips: 'please set name',
+          cmds: {
+            setname: 'text',
+          },
+        });
+      }
+      break;
+    case 'setname':
+      this.set('name', req.args);
+      reply(0, 'ok');
+      break;
+    default:
+      reply(400, 'not implemented: ' + req.f);
+    }
   },
 
 });

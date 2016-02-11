@@ -1,5 +1,5 @@
 hotjs.i18n.put('zh', {
-  'fastsignup': '快速注册',
+  'fastsignup': '游客登录',
   'signup': '注册',
   'login': '登录',
   'logout': '登出',
@@ -7,8 +7,15 @@ hotjs.i18n.put('zh', {
   'account created:': '账号已创建',
   'uid': '登录名',
   'passwd': '密码',
-  'name': '昵称',
+  'name': '请问少侠大名？',
+  'gender': '请问您要扮演男性吗？',
   'email': 'Email',
   'phone': '电话号码',
   'uuid': 'UUID',
+  'please login, or signup': '如果您已有帐号，请登录，否则请快速注册一个。',
+  'please set gender': '请选择您要扮演的角色的性别：',
+  'please set name': '请给您要扮演的角色取个名字吧：',
+  'male': '男性',
+  'female': '女性',
+  'setname': '设置名字',
 });

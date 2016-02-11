@@ -17,37 +17,6 @@ function enterWorld(id) {
   });
 }
 
-function login(u, p) {
-  client.rpc('login', {
-    uid: u,
-    passwd: p
-  }, function(err,ret){
-    if(err) {
-      localStorage.removeItem(saveUserId);
-      localStorage.removeItem(saveUserPasswd);
-      echo(ret);
-    } else {
-      echo('自动登录成功。\n');
-
-      localStorage.setItem(saveUserId, u);
-      localStorage.setItem(saveUserPasswd, p);
-      //echo(ret.token.uid + ' (' + ret.profile.name + ') ' + 'login success');
-
-      client.rpc('worlds', 0, function(err, ret) {
-        if(!err) {
-          if(Array.isArray(ret) && ret.length>0) {
-            for(var i=0; i<ret.length; i++) {
-              if(ret[i] && ret[i].id) {
-                enterWorld(ret[i].id);
-              }
-            }
-          } else echo(JSON.stringify(ret));
-        } else echo(err);
-      });
-    }
-  });
-}
-
 function runCmd(str) {
   if(str.indexOf('look ') === 0) {
     var what = str.split(' ')[1];
@@ -73,7 +42,7 @@ function onCmdLinkClicked(e) {
 }
 
 function parseStr(str) {
-  if(!str) return;
+  if(typeof str !== 'string') return;
   str = str.replace(/\n/g, '<br/>').replace(/<a cmd=/g, '<a href=\'#\' class=\'cmd\' cmd=');
   console.log(str);
   return str;
@@ -87,13 +56,14 @@ function title(str) {
 
 function echo(str) {
   var t = $('div#vision-content');
-  t.html(t.html() + parseStr(str) + '<br/>');
+  t.append(parseStr(str) + '<br/>');
+  t.scrollTop(t.prop("scrollHeight"));
+
+  //setTimeout(function(){
+  //  t.animate({ scrollTop: t.prop("scrollHeight") }, 500);
+  //}, 50);
 
   $('a.cmd').on('click', onCmdLinkClicked);
-
-  setTimeout(function(){
-    t.animate({ scrollTop: t.prop("scrollHeight") }, 500);
-  }, 50);
 }
 
 function scene(str) {
@@ -128,16 +98,57 @@ function me(args) {
   t.html(JSON.stringify(args));
 }
 
+//var cmdcontainer = 'div#cmds';
+//var dlgcontainer = 'body';
+
+var cmdcontainer = 'div#cmds';
+var dlgcontainer = 'div#vision-content';
+
 function parseReply(err, ret) {
   if(err) echo(ret);
-  else if(ret.cmds) updateCmds('reply', ret.cmds);
+  else if(ret.cmds) updateCmds('reply', ret);
 }
 
-function parseSignUpReply(err,ret){
-  parseReply(err,ret);
+function login(u, p) {
+  localStorage.setItem(saveUserId, u);
+  localStorage.setItem(saveUserPasswd, p);
+
+  client.rpc('login', {
+    uid: u,
+    passwd: p
+  }, parseLoginReply);
+}
+
+function parseSignUpReply(err, ret){
+  parseReply(err, ret);
   if(! err) {
     echo('帐号已创建：' + ret.uid + '/' + ret.passwd);
     login(ret.uid, ret.passwd);
+  }
+}
+
+function parseLoginReply(err,ret){
+  parseReply(err, ret);
+  if(err) {
+    localStorage.removeItem(saveUserId);
+    localStorage.removeItem(saveUserPasswd);
+    echo(ret);
+  } else {
+    echo('登录成功。\n');
+
+    //echo(ret.token.uid + ' (' + ret.profile.name + ') ' + 'login success');
+
+    client.rpc('worlds', 0, function(err, ret) {
+      if(!err) {
+        if(Array.isArray(ret) && ret.length>0) {
+          for(var i=0; i<ret.length; i++) {
+            if(ret[i] && ret[i].id) {
+              enterWorld(ret[i].id);
+            }
+          }
+        } else echo(JSON.stringify(ret));
+      } else echo(err);
+    });
   }
 }
 
@@ -150,12 +161,14 @@ function onBtnClicked(e) {
   default:
     client.rpc(method, $(this).attr('arg'), parseReply);
   }
+  $('div#cmds').remove();
 }
 
 function onInputBtnClicked(e){
   var method = $(this).attr('id');
   client.rpc(method, $('input#'+method).val(), parseReply);
   $('input#'+method).val('');
+  $('div#cmds').remove();
 }
 
 function onInputBoxEnter(e) {
@@ -163,24 +176,33 @@ function onInputBoxEnter(e) {
 }
 
 function onDialogBtnClicked(e) {
+  var t = $('div#vision-content');
+
   var method = $(this).attr('id');
   var dlg = $('div#'+method);
-  var x = ($(window).width() - dlg.width()) / 2;
-  var y = ($(window).height() - dlg.height()) / 2;
+  dlg.appendTo(dlgcontainer);
   dlg.show();
-  dlg.css({
-    position:'absolute',
-    left: x + 'px',
-    top: y + 'px',
-  });
+
+  var t = $('div#vision-content');
+  t.scrollTop(t.prop("scrollHeight"));
+
+//  var x = ($(window).width() - dlg.width()) / 2;
+//  var y = ($(window).height() - dlg.height()) / 2;
+//  dlg.css({
+//    position:'absolute',
+//    left: x + 'px',
+//    top: y + 'px',
+//  });
 
   $('div#cmds').hide();
+//  $(this).hide();
 }
 
 function onDialogXClicked(e) {
   var method = $(this).attr('X');
   $('div#'+method).hide();
   $('div#cmds').show();
+  //$('button#'+method).show();
 }
 
 function onDialogOKClicked(e) {
@@ -194,12 +216,25 @@ function onDialogOKClicked(e) {
   case 'signup':
     client.rpc(method, args, parseSignUpReply);
     break;
+  case 'login':
+    client.rpc(method, args, parseLoginReply);
+    break;
   default:
     client.rpc(method, args, parseReply);
   }
 }
 
-function updateCmds(event, cmds){
+function updateCmds(event, ret){
+  $('div#cmds').remove();
+  $('<div>').attr('id', 'cmds').appendTo('div#vision-content');
+
+  var tips = ret.tips;
+  if(typeof tips === 'string') {
+    $('<p>').text(_T(tips)).appendTo('div#cmds');
+  }
+
+  var cmds = ret.cmds;
+
   var v, div, btn, words, label, input;
   for(var k in cmds) {
     v = cmds[ k ];
@@ -208,13 +243,19 @@ function updateCmds(event, cmds){
       $('button#'+k).remove();
 
     } else if(v === true) {
+      if(k === 'fastsignup') {
+        var u = localStorage.getItem(saveUserId);
+        var p = localStorage.getItem(saveUserPasswd);
+        if(u && p) continue;
+      }
+
       btn = $('<button>').text(_T(k)).attr('id', k).attr('arg', 0).addClass('cmd');
-      $('#cmds').append(btn);
+      $(cmdcontainer).append(btn);
       btn.on('click', onBtnClicked);
 
     } else if(typeof v === 'string') {
       div = $('<div>').attr('id',k).addClass('cmd');
-      $('#cmds').append(div);
+      $(cmdcontainer).append(div);
       input = $('<input>').attr('id', k).addClass('cmd');
       words = v.split(',');
       switch(words[0]) {
@@ -228,8 +269,8 @@ function updateCmds(event, cmds){
         break;
       case 'number':
         input.attr('type', 'number').attr('size',5);
-        if(words[1]) input.attr('min', parseInt(words[1]));
-        if(words[2]) input.attr('max', parseInt(words[2]));
+        if(words[1]) input.attr('min', parseInt(words[1], 10));
+        if(words[2]) input.attr('max', parseInt(words[2], 10));
         break;
       case 'password':
         input.attr('type', 'password').attr('size',40);
@@ -251,24 +292,23 @@ function updateCmds(event, cmds){
       for(var i=0; i<v.length; i++) {
         var arg = v[i];
         var t_arg = (typeof arg === 'string') ? _T(arg) : arg;
-        btn = $('<button>').text(_T(k)+' '+ t_arg).attr('id', k).attr('arg', arg).addClass('cmd');
+        btn = $('<button>').text(t_arg).attr('id', k).attr('arg', arg).addClass('cmd');
         div.append(btn);
         btn.on('click', onBtnClicked);
       }
 
     } else if( typeof v === 'object' ) {
       btn = $('<button>').text(_T(k)).attr('id', k).addClass('cmd');
-      $('#cmds').append(btn);
+      $(cmdcontainer).append(btn);
 
       var dlg = $('<div>').attr('id',k).addClass('dialog');
-      $('body').append(dlg);
+      $(dlgcontainer).append(dlg);
       dlg.hide();
 
       var dlgheader = $('<div>').addClass('dlgheader');
       dlg.append(dlgheader);
       dlgheader.append($('<span>').text(_T(k)));
-      var X = $('<button>').text('X').attr('X', k).addClass('cmd');
-      dlgheader.append(X);
+
       var dlgbody = $('<div>').addClass('dlgbody');
       dlg.append(dlgbody);
       for(var j in v) {
@@ -312,43 +352,48 @@ function updateCmds(event, cmds){
       }
       var dlgfooter = $('<div>').addClass('dlgfooter');
       dlg.append(dlgfooter);
-      var OK = $('<button>').text('OK').attr('OK', k).addClass('cmd');
+      var OK = $('<button>').text(_T('OK')).attr('OK', k).addClass('cmd');
+      var X = $('<button>').text(_T('Cancel')).attr('X', k).addClass('cmd');
       dlgfooter.append(OK);
+      dlgfooter.append(X);
 
+      btn.dlg = dlg;
       btn.on('click', onDialogBtnClicked);
       OK.on('click', onDialogOKClicked);
       X.on('click', onDialogXClicked);
 
+      if(_.size(cmds) === 1 && btn) btn.trigger('click');
     } else {
 
     }
   }
 
-  if(_.size(cmds) === 1 && btn) btn.trigger('click');
+  var t = $('div#vision-content');
+  t.scrollTop(t.prop("scrollHeight"));
 }
 
 client.on('hello', function(event, args){
   echo(args.hello_msg + '\n版本号：' + args.version +'\n');
 
-  setTimeout(function(){
-    var u = localStorage.getItem(saveUserId);
-    var p = localStorage.getItem(saveUserPasswd);
-    console.log(u, p);
-    if(u && p) {
-      login(u, p);
-    } else {
-      //socket.emit('hello', {});
-      client.rpc('fastsignup', 0, function(err, ret){
-        console.log(err, ret);
-        if(err) {
-          echo(err);
-        } else {
-          echo(('您是第一次访问，自动创建账号：') + ret.uid + '/' + ret.passwd);
-          login(ret.uid, ret.passwd);
-        }
-      });
-    }
-  }, 200);
+//  setTimeout(function(){
+//    var u = localStorage.getItem(saveUserId);
+//    var p = localStorage.getItem(saveUserPasswd);
+//    console.log(u, p);
+//    if(u && p) {
+//      login(u, p);
+//    } else {
+//      //socket.emit('hello', {});
+//      client.rpc('fastsignup', 0, function(err, ret){
+//        console.log(err, ret);
+//        if(err) {
+//          echo(err);
+//        } else {
+//          echo(('您是第一次访问，自动创建账号：') + ret.uid + '/' + ret.passwd);
+//          login(ret.uid, ret.passwd);
+//        }
+//      });
+//    }
+//  }, 200);
 });
 
 client.on('prompt', updateCmds);
@@ -399,7 +444,7 @@ client.on('scene', function(event, args){
 
 client.on('look', function(event, args){
   echo(args.long);
-  scene(args);
+  //scene(args);
 });
 
 client.on('vision', function(event, args){

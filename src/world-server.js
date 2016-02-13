@@ -17,7 +17,7 @@ var WorldServer = Class({
   },
 
   reset: function() {
-    this.db = null;
+    this.cache = null;
     this.pub = null;
     this.sub = null;
     this.id = 0;
@@ -43,9 +43,9 @@ var WorldServer = Class({
     var redisConf = this.conf.redis;
 
     // use redis as data storage
-    this.db = redis.createClient(redisConf.port, redisConf.host, {});
-    this.db.on('error', function(err) {
-      throw new Error('db redis eror: ' + err);
+    this.cache = redis.createClient(redisConf.port, redisConf.host, {});
+    this.cache.on('error', function(err) {
+      throw new Error('redisCache eror: ' + err);
     });
 
     // use redis pub/sub feature as message hub
@@ -59,7 +59,7 @@ var WorldServer = Class({
     });
 
     var self = this;
-    this.db.incr('world:seq', function(err, instanceId){
+    this.cache.incr('world:seq', function(err, instanceId){
       if(err) return;
       self.startInstance(instanceId);
     });
@@ -69,7 +69,7 @@ var WorldServer = Class({
     this.id = instanceId;
 
     var self = this;
-    var db = this.db;
+    var redisCache = this.cache;
     var now = Date.now();
 
     this.setup();
@@ -77,7 +77,7 @@ var WorldServer = Class({
     // init userver instance info & expire in 5 seconds,
     // we have to update it every 5 seconds, as heartbeat info
     var key = 'world:#' + instanceId;
-    db.multi().hmset(key, {
+    redisCache.multi().hmset(key, {
       id: instanceId,
       started: now,
       players: 0,
@@ -278,10 +278,10 @@ var WorldServer = Class({
     // clear tick() timer
     if(this.timer) clearInterval(this.timer);
 
-    // clear server entry in db
-    var db = this.db;
-    db.multi().del('world:#' + this.id).zrem('world:list', this.id).exec(function(){
-      db.quit();
+    // clear server entry in redisCache
+    var redisCache = this.cache;
+    redisCache.multi().del('world:#' + this.id).zrem('world:list', this.id).exec(function(){
+      redisCache.quit();
     });
 
     // unload all objects, rooms, and protos
@@ -292,7 +292,7 @@ var WorldServer = Class({
     this.sub.unsubscribe();
     this.sub.end();
     this.pub.end();
-    this.db.end();
+    this.cache.end();
 
     delete _instances[this.id];
     this.reset();
@@ -304,9 +304,9 @@ var WorldServer = Class({
     var dropped = this.dropped;
 
     var now = Date.now();
-    if(this.db && this.id) {
+    if(this.cache && this.id) {
       var key = 'world:#' + this.id;
-      this.db.multi()
+      this.cache.multi()
         .hset(key, 'players', self.counts.players).expire(key, 5)
         .zremrangebyscore('world:list', 0, now-5000)
         .zadd('world:list', now, this.id)

@@ -63,8 +63,8 @@ var User = Class({
 
   saveData: function(reply) {
     if(!reply) reply = function(){};
-    if(!this.server || !this.server.db) return;
-    var db = this.server.db;
+    if(!this.server || !this.server.cache) return;
+    var db = this.server.cache;
 
     var p = this.profile;
     var uidkey = 'user:#' + this.uid;
@@ -78,8 +78,8 @@ var User = Class({
 
   loadData: function(reply) {
     if(!reply) reply = function(){};
-    if(!this.server || !this.server.db) return;
-    var db = this.server.db;
+    if(!this.server || !this.server.cache) return;
+    var db = this.server.cache;
     var user = this;
 
     var uidkey = 'user:#' + this.uid;
@@ -238,7 +238,7 @@ var User = Class({
   },
 
   onUserRpcworlds: function(req, reply) {
-    var db = this.server.db;
+    var db = this.server.cache;
     if(!db) return reply(500, 'db error');
 
     var worldskey = 'world:list';
@@ -256,7 +256,7 @@ var User = Class({
 
   onUserRpcenter: function(req, reply) {
     // if(this.world) return reply(400, 'already in a world');
-    var db = this.server.db;
+    var db = this.server.cache;
     var pub = this.server.pub;
     if(!db || !pub) return reply(500, 'db error');
 

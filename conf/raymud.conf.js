@@ -7,7 +7,7 @@ exports = module.exports = {
     version: 20160129,
     client_req: 20160129,
   },
-  mongodb: 'mongodb://localhost:27017/es3',
+  mongodb: 'localhost:27017/es3',
   redis: {
     host: 'localhost',
     port: 6379,

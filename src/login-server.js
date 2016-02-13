@@ -3,6 +3,7 @@
 var socketio = require('socket.io'),
   express = require('express'),
   http = require('http'),
+  mongojs = require('mongojs'),
   redis = require('redis'),
   ioredis = require('socket.io-redis');
 
@@ -21,6 +22,8 @@ var LoginServer = Class({
   reset: function() {
     this.io = null;
     this.db = null;
+    this.dbusers = null;
+    this.cache = null;
     this.pub = null;
     this.sub = null;
     this.id = 0;
@@ -36,12 +39,15 @@ var LoginServer = Class({
   startup: function() {
     if(this.isRunning) throw new Error('server is already running.');
 
+    this.db = mongojs('es3');
+    this.dbusers = this.db.collection('users');
+
     var redisConf = this.conf.redis;
 
     // use redis as data storage
-    this.db = redis.createClient(redisConf.port, redisConf.host, {});
-    this.db.on('error', function(err) {
-      throw new Error('db redis eror: ' + err);
+    this.cache = redis.createClient(redisConf.port, redisConf.host, {});
+    this.cache.on('error', function(err) {
+      throw new Error('cache redis eror: ' + err);
     });
 
     // use redis pub/sub feature as message hub
@@ -55,7 +61,7 @@ var LoginServer = Class({
     });
 
     var self = this;
-    this.db.incr('server:seq', function(err, instanceId){
+    this.cache.incr('server:seq', function(err, instanceId){
       if(err) return;
       self.startInstance(instanceId);
     });
@@ -66,22 +72,22 @@ var LoginServer = Class({
 
     var self = this;
     var conf = this.conf;
-    var db = this.db;
+    var redisCache = this.cache;
     var now = Date.now();
 
     // init userver instance info & expire in 5 seconds,
     // we have to update it every 5 seconds, as heartbeat info
     var key = 'server:#' + instanceId;
-    db.multi().mset(key, {
+    redisCache.multi().mset(key, {
       id: instanceId,
       started: now,
       users: 0,
     }).expire(key, 5).zadd('server:all', now, instanceId).exec();
 
     // init user id sequence if not exists
-    db.get('user:seq', function(err, ret) {
+    redisCache.get('user:seq', function(err, ret) {
       if(err) return;
-      if(!ret || ret<1000) db.set('user:seq', 1000);
+      if(!ret || ret<1000) redisCache.set('user:seq', 1000);
     });
 
     // init network listener
@@ -139,10 +145,10 @@ var LoginServer = Class({
     // clear tick() timer
     if(this.timer) clearInterval(this.timer);
 
-    // clear server entry in db
-    var db = this.db;
-    db.multi().del('server:#' + this.id).zrem('server:all', this.id).exec(function(){
-      db.quit();
+    // clear server entry in redisCache
+    var redisCache = this.cache;
+    redisCache.multi().del('server:#' + this.id).zrem('server:all', this.id).exec(function(){
+      redisCache.quit();
     });
 
     // close socket connection
@@ -167,7 +173,9 @@ var LoginServer = Class({
     this.sub.unsubscribe();
     this.sub.end();
     this.pub.end();
-    this.db.end();
+    this.cache.end();
+
+    this.db.close();
 
     delete _instances[this.id];
     this.reset();
@@ -179,9 +187,9 @@ var LoginServer = Class({
     var dropped = this.dropped;
 
     var now = Date.now();
-    if(this.db && this.id) {
+    if(this.cache && this.id) {
       var key = 'server:#' + this.id;
-      this.db.multi()
+      this.cache.multi()
         .hset(key, 'users', self.usersCount).expire(key, 5)
         .zremrangebyscore('server:all', 0, now-5000)
         .zadd('server:all', now, this.id)
@@ -306,7 +314,7 @@ var LoginServer = Class({
           user.onDrop();
           user.socket = null;
         }
-        this.db.zadd('user:dropped', now, uid);
+        this.cache.zadd('user:dropped', now, uid);
       }
       sock.users = {};
     }
@@ -318,8 +326,8 @@ var LoginServer = Class({
   onUserRpcfastsignup: function(sock, req, reply) {
     var server = this;
     var args = req.args = {};
-    this.db.incr('user:seq', function(err, ret){
-      if(err) reply(500, 'db error');
+    this.cache.incr('user:seq', function(err, ret){
+      if(err) reply(500, 'redisCache error');
       args.uid = 'u' + ret;
       args.name = args.uid;
       args.passwd = ''+(100000 + Math.floor(Math.random() * 899999));
@@ -339,17 +347,17 @@ var LoginServer = Class({
   // args: { uid, passwd }
   onUserRpclogin: function(sock, req, reply) {
     var server = this;
-    var db = this.db;
+    var redisCache = this.cache;
 
     var args = req.args;
     if(!args || typeof args !== 'object') return reply(400, 'bad request');
 
     var uid = args.uid;
     var uidkey = 'user:#' + uid;
-    db.hgetall(uidkey, function(err, userinfo){
+    redisCache.hgetall(uidkey, function(err, userinfo){
       // console.log(userinfo);
       // validate login
-      if(err) return reply(500, 'db error');
+      if(err) return reply(500, 'redisCache error');
       if(!userinfo) return reply(404, 'user not exists');
       if(userinfo.passwd !== args.passwd) return reply(403, 'invalid user id or password');
 
@@ -383,7 +391,7 @@ var LoginServer = Class({
       }
 
       // send reply with pin
-      db.multi().hset(uidkey, 'lastLogin', now).zadd('user:online', now, uid).exec();
+      redisCache.multi().hset(uidkey, 'lastLogin', now).zadd('user:online', now, uid).exec();
       reply(0, {
         token : {
           uid : user.uid,
@@ -402,10 +410,10 @@ var LoginServer = Class({
         if(isRelogin) {
           user.onReconnect(req);
         } else {
-          db.zscore('user:dropped', uid, function(err, ret){
-            if(err) return reply(500, 'db error');
+          redisCache.zscore('user:dropped', uid, function(err, ret){
+            if(err) return reply(500, 'redisCache error');
             if(ret) {
-              db.zrem('user:dropped', uid);
+              redisCache.zrem('user:dropped', uid);
               user.onReconnect(req);
             } else {
               user.onLogin(req);
@@ -433,9 +441,9 @@ var LoginServer = Class({
           uid : 'string',
           passwd : 'string',
           name : 'string',
-          email : 'email',
-          phone : 'string',
-          uuid : 'string',
+//          email : 'email',
+//          phone : 'string',
+//          uuid : 'string',
         },
         login : {
           uid : 'string',
@@ -453,8 +461,8 @@ var LoginServer = Class({
 
     var uid = req.args.uid;
     var uidkey = 'user:#' + uid;
-    this.db.hgetall(uidkey, function(err, ret){
-      if(err) return reply(500, 'db error');
+    this.cache.hgetall(uidkey, function(err, ret){
+      if(err) return reply(500, 'redisCache error');
       if(ret) return reply(409, 'user id ' + uid + ' already exits');
       server.createNewUser(sock, req, reply);
     });
@@ -489,8 +497,8 @@ var LoginServer = Class({
 
     var uid = req.args.uid;
     var uidkey = 'user:#' + uid;
-    this.db.multi().incr('user:count').hmset(uidkey, userRecord).exec(function(err){
-      if(err) return reply(500, 'db error');
+    this.cache.multi().incr('user:count').hmset(uidkey, userRecord).exec(function(err){
+      if(err) return reply(500, 'redisCache error');
       return reply(0, { uid:uid, passwd: args.passwd });
     });
   },
@@ -504,7 +512,7 @@ var LoginServer = Class({
 
     var uid = user.uid;
     var uidkey = 'user:#' + uid;
-    this.db.multi().hset(uidkey, 'online', 0).zrem('user:online', uid).exec();
+    this.cache.multi().hset(uidkey, 'online', 0).zrem('user:online', uid).exec();
 
     this.sub.unsubscribe('user:#' + uid);
     delete this.users[uid];

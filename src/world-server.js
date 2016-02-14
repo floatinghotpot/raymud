@@ -387,7 +387,7 @@ var WorldServer = Class({
           if(err) return reply(500, 'fail load player data');
 
           var conf = world.conf;
-          if(ret === 0) { // new player
+          if(!ret) { // new player
             player.setData(conf.new_char);
             player.save();
           }

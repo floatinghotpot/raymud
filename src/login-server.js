@@ -42,6 +42,9 @@ var LoginServer = Class({
     this.db = mongojs(this.conf.mongodb);
     this.dbusers = this.db.collection('users');
 
+    // init user id sequence if not exists
+    this.initSeqId('userid', 1001);
+
     var redisConf = this.conf.redis;
 
     // use redis as data storage
@@ -65,6 +68,26 @@ var LoginServer = Class({
     this.startInstance(this.conf.instanceId);
   },
 
+  initSeqId: function(name, value) {
+    var sequences = this.db.collection('sequences');
+    sequences.find({_id: name}).count(function(err, n){
+      if(n === 0) {
+        sequences.insert({ _id:name, seq: value });
+      }
+    });
+  },
+
+  nextSeqId: function(name, callback) {
+    var sequences = this.db.collection('sequences');
+    sequences.findAndModify({
+      query: { _id: name },
+      update: { $inc: { seq: 1 } },
+      new: true,
+    }, function(err, doc, lastErrorObject){
+      if(typeof callback === 'function') callback(err, doc.seq);
+    });
+  },
+
   startInstance: function(instanceId) {
     this.id = instanceId;
 
@@ -81,12 +104,6 @@ var LoginServer = Class({
       started: now,
       users: 0,
     }).expire(key, 5).zadd('server:all', now, instanceId).exec();
-
-    // init user id sequence if not exists
-    redisCache.get('user:seq', function(err, ret) {
-      if(err) return;
-      if(!ret || ret<1000) redisCache.set('user:seq', 1000);
-    });
 
     // init network listener
     var app = express().use(express.static(conf.www));
@@ -324,8 +341,9 @@ var LoginServer = Class({
   onUserRpcfastsignup: function(sock, req, reply) {
     var server = this;
     var args = req.args = {};
-    this.cache.incr('user:seq', function(err, ret){
-      if(err) reply(500, 'redisCache error');
+    this.nextSeqId('userid', function(err, ret) {
+      if(err) reply(500, 'db error');
+      if(err) reply(500, 'db error');
       args.uid = 'u' + ret;
       args.name = args.uid;
       args.passwd = ''+(100000 + Math.floor(Math.random() * 899999));
@@ -351,11 +369,10 @@ var LoginServer = Class({
     if(!args || typeof args !== 'object') return reply(400, 'bad request');
 
     var uid = args.uid;
-    var uidkey = 'user:#' + uid;
-    redisCache.hgetall(uidkey, function(err, userinfo){
+    server.dbusers.findOne({ uid: uid }, function(err, userinfo) {
       // console.log(userinfo);
       // validate login
-      if(err) return reply(500, 'redisCache error');
+      if(err) return reply(500, 'db error');
       if(!userinfo) return reply(404, 'user not exists');
       if(userinfo.passwd !== args.passwd) return reply(403, 'invalid user id or password');
 
@@ -388,8 +405,11 @@ var LoginServer = Class({
         user.setLink(server, sock, pin);
       }
 
+      server.dbusers.update({ uid: uid }, { $set: { lastLogin: now } });
+
+      redisCache.zadd('user:online', now, uid);
+
       // send reply with pin
-      redisCache.multi().hset(uidkey, 'lastLogin', now).zadd('user:online', now, uid).exec();
       reply(0, {
         token : {
           uid : user.uid,
@@ -458,10 +478,9 @@ var LoginServer = Class({
     if(!req || !req.args || !req.args.uid) return reply(400, 'invalid request, uid required');
 
     var uid = req.args.uid;
-    var uidkey = 'user:#' + uid;
-    this.cache.hgetall(uidkey, function(err, ret){
-      if(err) return reply(500, 'redisCache error');
-      if(ret) return reply(409, 'user id ' + uid + ' already exits');
+    this.dbusers.find({ uid: uid }).count(function(err, n) {
+      if(err) return reply(500, 'db error');
+      if(n > 0) return reply(409, 'user id ' + uid + ' already exits');
       server.createNewUser(sock, req, reply);
     });
   },
@@ -494,9 +513,9 @@ var LoginServer = Class({
     }
 
     var uid = req.args.uid;
-    var uidkey = 'user:#' + uid;
-    this.cache.multi().incr('user:count').hmset(uidkey, userRecord).exec(function(err){
-      if(err) return reply(500, 'redisCache error');
+    this.dbusers.insert(userRecord, function(err, doc){
+      console.log(err, doc);
+      if(err) return reply(500, 'db error');
       return reply(0, { uid:uid, passwd: args.passwd });
     });
   },
@@ -509,8 +528,7 @@ var LoginServer = Class({
     user.removeLink();
 
     var uid = user.uid;
-    var uidkey = 'user:#' + uid;
-    this.cache.multi().hset(uidkey, 'online', 0).zrem('user:online', uid).exec();
+    this.cache.zrem('user:online', uid);
 
     this.sub.unsubscribe('user:#' + uid);
     delete this.users[uid];

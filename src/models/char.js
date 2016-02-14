@@ -249,16 +249,30 @@ var CHAR = Class(OBJ, {
     if(!reply) reply = function(){};
     if(!this._uid) return reply(500, 'no uid is found when save');
 
-    // TODO:
-    return reply(0, 0);
+    this.set('uid', this._uid);
+
+    var self = this;
+    this._world.dbchars.save(this.queryData(), function(err, doc) {
+      if(err) return reply(500, 'db error');
+      if(!doc) return reply(0, 0);
+
+      self.set('_id', doc._id);
+      return reply(0, 1);
+    });
   },
 
   load: function(uid, reply) {
     if(!reply) reply = function(){};
     if(!this._uid) return reply(500, 'no uid is found when save');
 
-    // TODO:
-    return reply(0, 0);
+    var self = this;
+    this._world.dbchars.findOne({ uid: this._uid }, function(err, doc) {
+      if(err) return reply(500, 'db error');
+      if(!doc) return reply(0, 0);
+
+      self.setRawData(doc);
+      return reply(0, 1);
+    });
   },
 
   go: function(dir, reply) {
@@ -326,6 +340,7 @@ var CHAR = Class(OBJ, {
       break;
     case 'setgender':
       this.set('gender', req.args);
+      this.save();
       reply(0, 'ok');
       if(!this.query('name')) {
         this.notify('prompt', {
@@ -338,6 +353,7 @@ var CHAR = Class(OBJ, {
       break;
     case 'setname':
       this.set('name', req.args);
+      this.save();
       reply(0, 'ok');
       break;
     default:

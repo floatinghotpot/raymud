@@ -4,10 +4,15 @@ var test = require('tape');
 var mongojs = require('mongojs');
 
 test('MongoDB', (t) => {
-  t.plan(4);
+  t.plan(1);
 
   var db = mongojs('es3');
   var users = db.collection('users');
+  users.count(function(err, n){
+    t.equal(n, 11);
+    db.close();
+  });
+  return;
   users.save({
     uid: 'zhang3',
     passwd: 'abc123',

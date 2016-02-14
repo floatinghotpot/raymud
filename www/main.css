@@ -112,6 +112,10 @@ i#icon-smiley {
   padding: 0px;
 }
 
+p {
+  padding: 10px;
+}
+
 a.cmd {
   color: blue;
   border: 1px dotted #ddd;

@@ -56,14 +56,15 @@ function title(str) {
 
 function echo(str) {
   var t = $('div#vision-content');
-  t.append(parseStr(str) + '<br/>');
+  var p = $('<p>').append(parseStr(str));
+  t.append(p);
   t.scrollTop(t.prop("scrollHeight"));
 
   //setTimeout(function(){
   //  t.animate({ scrollTop: t.prop("scrollHeight") }, 500);
   //}, 50);
 
-  $('a.cmd').on('click', onCmdLinkClicked);
+  $('a.cmd', p).on('click', onCmdLinkClicked);
 }
 
 function scene(str) {
@@ -246,7 +247,7 @@ function updateCmds(event, ret){
       if(k === 'fastsignup') {
         var u = localStorage.getItem(saveUserId);
         var p = localStorage.getItem(saveUserPasswd);
-        if(u && p) continue;
+        //if(u && p) continue;
       }
 
       btn = $('<button>').text(_T(k)).attr('id', k).attr('arg', 0).addClass('cmd');

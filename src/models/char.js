@@ -345,6 +345,8 @@ var CHAR = Class(OBJ, {
     }
   },
 
+  onHeartbeat: function() {
+  },
 });
 
 CHAR.NUM_ATTRIBUTES = NUM_ATTRIBUTES;

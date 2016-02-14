@@ -39,7 +39,7 @@ var LoginServer = Class({
   startup: function() {
     if(this.isRunning) throw new Error('server is already running.');
 
-    this.db = mongojs('es3');
+    this.db = mongojs(this.conf.mongodb);
     this.dbusers = this.db.collection('users');
 
     var redisConf = this.conf.redis;
@@ -60,11 +60,9 @@ var LoginServer = Class({
       throw new Error('pub redis eror: ' + err);
     });
 
-    var self = this;
-    this.cache.incr('server:seq', function(err, instanceId){
-      if(err) return;
-      self.startInstance(instanceId);
-    });
+    // we use configured instanceId,
+    // in real cloud, we will get instanceId from env
+    this.startInstance(this.conf.instanceId);
   },
 
   startInstance: function(instanceId) {

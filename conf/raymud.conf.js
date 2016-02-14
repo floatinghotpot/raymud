@@ -1,4 +1,5 @@
 exports = module.exports = {
+  instanceId: 1,
   server: {
     host: '0.0.0.0',
     port: 7000,

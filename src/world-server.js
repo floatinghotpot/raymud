@@ -1,6 +1,7 @@
 'use strict';
 
 var redis = require('redis');
+var mongojs = require('mongojs');
 
 var Class = require('mixin-pro').createClass;
 
@@ -17,6 +18,7 @@ var WorldServer = Class({
   },
 
   reset: function() {
+    this.db = null;
     this.cache = null;
     this.pub = null;
     this.sub = null;
@@ -26,12 +28,14 @@ var WorldServer = Class({
 
     this.protos = {};
     this.objects = {};
+    this.npcs = {};
     this.rooms = {};
     this.players = {};
 
     this.counts = {
       protos: 0,
       objects: 0,
+      npcs: 0,
       rooms: 0,
       players: 0,
     };
@@ -39,6 +43,9 @@ var WorldServer = Class({
 
   startup: function() {
     if(this.isRunning) throw new Error('server is already running.');
+
+    this.db = mongojs(this.conf.mongodb);
+    this.dbchars = this.db.collection('chars');
 
     var redisConf = this.conf.redis;
 
@@ -58,11 +65,9 @@ var WorldServer = Class({
       throw new Error('pub redis eror: ' + err);
     });
 
-    var self = this;
-    this.cache.incr('world:seq', function(err, instanceId){
-      if(err) return;
-      self.startInstance(instanceId);
-    });
+    // we use configured instanceId,
+    // in real cloud, we will get instanceId from env
+    this.startInstance(this.conf.instanceId);
   },
 
   startInstance: function(instanceId) {
@@ -294,6 +299,8 @@ var WorldServer = Class({
     this.pub.end();
     this.cache.end();
 
+    this.db.close();
+
     delete _instances[this.id];
     this.reset();
   },
@@ -302,6 +309,13 @@ var WorldServer = Class({
     var self = this;
     var players = this.players;
     var dropped = this.dropped;
+
+    // NPC AI & behavior will be called here
+    var npcs = this.npcs;
+    for(var k in npcs) {
+      var npc = npcs[k];
+      if(npc) npc.onHeartbeat();
+    }
 
     var now = Date.now();
     if(this.cache && this.id) {

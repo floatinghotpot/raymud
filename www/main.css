@@ -113,16 +113,21 @@ i#icon-smiley {
 }
 
 p {
-  padding: 10px;
+  padding: 3px;
+}
+
+li.exit {
+  line-height: 200%;
 }
 
 a.cmd {
   color: blue;
-  border: 1px dotted #ddd;
   text-decoration: none;
-  padding: 1px 3px;
-  margin: 1px 3px;
+  padding: 3px 5px;
+  margin: 3px 3px;
   background-color: #eee;
+  border: 1px solid #ccc;
+  border-radius: 5px;
 }
 
 div.dialog {

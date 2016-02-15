@@ -17,6 +17,7 @@ hotjs.i18n.put('zh', {
   'please login, or signup': '如果您已有帐号，请登录，否则请快速注册一个。',
   'please set gender': '请选择您要扮演的角色的性别：',
   'please set name': '请给您要扮演的角色取个名字吧：',
+  'name used by others, please set name': '这个名字已经被其他人用了，请重新选择名字：',
   'male': '男性',
   'female': '女性',
   'setname': '设置名字',

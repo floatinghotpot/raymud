@@ -194,12 +194,12 @@ var snowRuin1 = {
   short: '破旧大宅',
   long: '这里是一间破旧大宅的前院，大厅已经崩塌了一半，焦黑的<a cmd=\'look pole\'>梁柱</a>挡住了你的去路。庭院里<a cmd=\'look grass\'>杂草</a>丛生，看来已经很久没人住了。据说这里晚上有鬼魂出现，但是倒也从没有听说过有人被害，因此附近的居民仍然照常生活。往西可以经由大宅的正门回到街上。',
   detail: {
-    'grass': '这里的杂草已经足足有及腰的长度了，你忽然发现南边的草丛有什么东西发出金属的闪光，不过也可能是你的错觉。或许可以<a cmd=\'search grass\'>找找看</a>。',
+    'grass': '这里的杂草，已经足足有及腰的长度了。你忽然发现南边的草丛中，有什么东西发出金属的闪光。不过也可能是你的错觉。或许可以<a cmd=\'search grass\'>找找看</a>。',
     'pole': '从梁柱焦黑的痕迹来看，这座大宅的主人大概是因为火灾的关系才离开的吧。貌似沿着这个梁柱，可以<a cmd=\'climb pole\'>爬</a>到里面去。',
   },
   actions: {
     climb: 'var me=arguments[0]; var args=arguments[1]; if(args !== "pole") return 0;  me.vision("$N小心翼翼地爬过坍塌的梁柱进入大厅。\\n", me); if(me.move("ruin2")) { me.visionOther("$N从坍塌梁柱的另一头爬了过来。\\n", me); } return 1;',
-    search: 'var me=arguments[0]; var args=arguments[1]; if(args !== "grass") return 0;  if(this.flag) me.vision("$N在杂草里找来找去，但是什么也没有找到。\\n", me); return 1; this.flag=1; var ob = this._world.cloneObject("/snow/item/hairpin"); ob.move(me); me.vision("$N在草丛里找来找去，结果发现一支发簪！\\n", me); return 1;',
+    search: 'var me=arguments[0]; var args=arguments[1]; if(args !== "grass") return 0;  me.vision("$N在杂草里找来找去，但是什么也没有找到。\\n", me); return 1; var ob = this._world.cloneObject("/snow/item/hairpin"); ob.move(me); me.vision("$N在草丛里找来找去，结果发现一支发簪！\\n", me); return 1;',
   },
   exits: {
     west: 'lane1',

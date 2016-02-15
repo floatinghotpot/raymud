@@ -283,7 +283,7 @@ var CHAR = Class(OBJ, {
         this.visionOther('$N向'+ (_dirs[dir] || dir) +'离开。', this);
         reply(0, '你来到'+room.short()+'。');
         this.move(room);
-        return this.visionOther('$N走了过来。', this);
+        this.visionOther('<a cmd=\'look ' + this._key + '\'>' + this.short() + '</a>走了过来。', this);
       }
     }
     return reply(404, '这个方向没有出口。');
@@ -312,6 +312,7 @@ var CHAR = Class(OBJ, {
         if(target && typeof target._actions === 'object') {
           var func = target._actions[cmd];
           if(typeof func === 'function') {
+            console.log(cmd, func);
             func.call(target, this, params);
           } else {
             reply(400, 'unknown command: ' + str);
@@ -320,7 +321,7 @@ var CHAR = Class(OBJ, {
     }
   },
 
-  onEnterWorld: function() {
+  onEnterWorld: function(req, reply) {
     if(!this.query('gender')) {
       this.notify('prompt', {
         tips: 'please set gender',
@@ -328,33 +329,53 @@ var CHAR = Class(OBJ, {
           setgender: ['male', 'female'],
         },
       });
+    } else if(!this.query('name')) {
+      this.notify('prompt', {
+        tips: 'please set name',
+        cmds: {
+          setname: 'text',
+        },
+      });
+    } else {
+      if(this.environment()) this.scene();
+      else {
+        var room = this.query('home_room') || this._world.getStartRoom();
+        this.move(room);
+        this.visionOther('<a cmd=\'look ' + this._key + '\'>' + this.short() + '</a>连线进入了这个世界。', this);
+      }
     }
   },
 
   onCharRpc: function(req, reply) {
+    var self = this;
     // TODO:
     console.log(req.f, req.args);
     switch(req.f) {
     case 'cmd':
-      this.command(req.args, reply);
+      self.command(req.args, reply);
       break;
     case 'setgender':
-      this.set('gender', req.args);
-      this.save();
-      reply(0, 'ok');
-      if(!this.query('name')) {
-        this.notify('prompt', {
-          tips: 'please set name',
-          cmds: {
-            setname: 'text',
-          },
-        });
-      }
+      self.set('gender', req.args);
+      self.save();
+      reply(0, '性别已确认。');
+      self.onEnterWorld(req, reply);
       break;
     case 'setname':
-      this.set('name', req.args);
-      this.save();
-      reply(0, 'ok');
+      self._world.dbchars.find({name:req.args}).count(function(err, n){
+        if(n > 0) {
+          reply(0, {
+            tips: 'name used by others, please set name',
+            cmds: {
+              setname: 'text',
+            },
+          });
+        } else {
+          self.set('name', req.args);
+          self.save();
+          reply(0, '您选择了名字：' + req.args);
+          self.onEnterWorld(req, reply);
+        }
+      });
       break;
     default:
       reply(400, 'not implemented: ' + req.f);

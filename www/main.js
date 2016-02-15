@@ -27,9 +27,12 @@ function runCmd(str) {
         return;
       }
     }
+    if(what[0] !== '/') {
+      echo('这里没有这样东西。\n');
+      return;
+    }
   }
   
-  // TODO: send to server
   client.rpc('cmd', str, function(err, ret) {
     if(ret) echo(ret + '\n');
   });
@@ -71,7 +74,11 @@ function scene(str) {
   var t = $('div#scene-content');
   t.html(parseStr(str));
 
-  // also display it in vision log view
+  // when go out of room, remove the command link and space
+  $('div#vision-content').find('a').contents().unwrap();
+  $('li', 'div#vision-content').removeClass('exit');
+
+  // display it in vision log view
   echo(str);
 }
 
@@ -107,6 +114,7 @@ var dlgcontainer = 'div#vision-content';
 
 function parseReply(err, ret) {
   if(err) echo(ret);
+  else if(typeof ret === 'string') echo(ret);
   else if(ret.cmds) updateCmds('reply', ret);
 }
 
@@ -123,7 +131,7 @@ function login(u, p) {
 function parseSignUpReply(err, ret){
   parseReply(err, ret);
   if(! err) {
-    echo('帐号已创建：' + ret.uid + '/' + ret.passwd);
+    echo('帐号已创建：' + ret.uid + ' / ' + ret.passwd);
     login(ret.uid, ret.passwd);
   }
 }
@@ -374,7 +382,9 @@ function updateCmds(event, ret){
 }
 
 client.on('hello', function(event, args){
-  echo(args.hello_msg + '\n版本号：' + args.version +'\n');
+  $('div#vision-content').html('');
+  echo(args.hello_msg);
+  echo('版本号：' + args.version);
 
 //  setTimeout(function(){
 //    var u = localStorage.getItem(saveUserId);
@@ -389,7 +399,7 @@ client.on('hello', function(event, args){
 //        if(err) {
 //          echo(err);
 //        } else {
-//          echo(('您是第一次访问，自动创建账号：') + ret.uid + '/' + ret.passwd);
+//          echo(('您是第一次访问，自动创建账号：') + ret.uid + ' / ' + ret.passwd);
 //          login(ret.uid, ret.passwd);
 //        }
 //      });
@@ -432,13 +442,13 @@ client.on('scene', function(event, args){
 
   var exits = args.exits;
   if(exits && _.size(exits)>0) {
-    str += '这里明显的出口有：';
+    str += '这里明显的出口有：\n';
     var items = [];
     for(var i in exits) {
       var room = exits[i];
-      items.push('<a cmd=\'go ' + i + '\'>' + (_dirs[i] || i) + '</a>（' + room + '）');
+      items.push('<li class=\'exit\'>□ <a cmd=\'go ' + i + '\'>' + (_dirs[i] || i) + '</a>（' + room + '）</li>');
     }
-    str += (items.join('、')) + '。\n';
+    str += '<ul>' + (items.join('')) + '</ul>';
   }
   scene(str);
 });

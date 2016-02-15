@@ -368,13 +368,17 @@ var WorldServer = Class({
     }
   },
 
+  getStartRoom: function() {
+    var conf = this.conf;
+    return conf.entries[ Math.floor(Math.random() * conf.entries.length) ];
+  },
+
   onCharCmdenter: function(req, reply) {
     var world = this;
     var uid = req.uid;
     var player = this.players[req.uid];
     // console.log(player);
     if(player) {
-      player.scene();
       player.onEnterWorld(req, reply);
     } else {
       player = this.cloneObject('/player');
@@ -392,8 +396,6 @@ var WorldServer = Class({
             player.save();
           }
 
-          var startRoom = player.query('last_room') || conf.entries[ Math.floor(Math.random() * conf.entries.length) ];
-          player.move(startRoom);
           player.onEnterWorld(req, reply);
         });
       }

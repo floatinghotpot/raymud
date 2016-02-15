@@ -458,7 +458,7 @@ var LoginServer = Class({
         signup : {
           uid : 'string',
           passwd : 'string',
-          name : 'string',
+//          name : 'string',
 //          email : 'email',
 //          phone : 'string',
 //          uuid : 'string',
